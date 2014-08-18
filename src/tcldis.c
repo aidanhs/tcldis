@@ -7,16 +7,17 @@ static Tcl_Interp *interp;
 extern const void *TclGetInstructionTable(void);
 
 static PyObject *
-tcldis_test(PyObject *self, PyObject *args, PyObject *kwargs)
+tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	static char *kwlist[] = {NULL};
+	static char *kwlist[] = {"tcl_code", NULL};
+	char *tclCode;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "", kwlist))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist, &tclCode))
 		return NULL;
 
 	Tcl_Obj *tObj = Tcl_NewObj();
 	Tcl_IncrRefCount(tObj);
-	Tcl_AppendStringsToObj(tObj, "set x 1; if {$x} {puts 1}", NULL);
+	Tcl_AppendStringsToObj(tObj, tclCode, NULL);
 
 	const Tcl_ObjType *bct = Tcl_GetObjType("bytecode");
 	/*
@@ -129,10 +130,10 @@ err:
 }
 
 static PyMethodDef TclDisMethods[] = {
-	{"test",  (PyCFunction)tcldis_test,
-		METH_VARARGS | METH_KEYWORDS, "test"},
+	{"printbc",  (PyCFunction)tcldis_printbc,
+		METH_VARARGS | METH_KEYWORDS, "print bytecode"},
 	{"inst_table",  (PyCFunction)tcldis_inst_table,
-		METH_VARARGS | METH_KEYWORDS, "inst_table"},
+		METH_VARARGS | METH_KEYWORDS, "get inst table"},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
 
