@@ -39,17 +39,20 @@ tcldis_inst_table(PyObject *self, PyObject *args, PyObject *kwargs)
 		return NULL;
 
 	InstructionDesc inst;
-	int i = 0;
+	int i = 0, opIdx;
 	PyObject *pInst = NULL;
 	PyObject *pInstName = NULL;
 	PyObject *pInstNumBytes = NULL;
 	PyObject *pInstStackEffect = NULL;
+	PyObject *pInstOperands = NULL, *pInstOperand = NULL;
 	while (1) {
 		inst = insts[i];
 		if (inst.name == NULL)
 			break;
 
 		pInst = PyDict_New();
+		if (pInst == NULL)
+			goto err;
 
 		pInstName = PyString_FromString(inst.name);
 		if (pInstName == NULL)
@@ -76,6 +79,21 @@ tcldis_inst_table(PyObject *self, PyObject *args, PyObject *kwargs)
 			goto err;
 		Py_DECREF(pInstStackEffect);
 
+		pInstOperands = PyList_New(0);
+		if (pInstOperands == NULL)
+			goto err;
+		for (opIdx = 0; opIdx < inst.numOperands; opIdx++) {
+			pInstOperand = PyInt_FromLong(inst.opTypes[opIdx]);
+			if (pInstOperand == NULL)
+				goto err;
+			if (PyList_Append(pInstOperands, pInstOperand) != 0)
+				goto err;
+			Py_DECREF(pInstOperand);
+		}
+		if (PyDict_SetItemString(pInst, "operands", pInstOperands) != 0)
+			goto err;
+		Py_DECREF(pInstOperands);
+
 		if (PyList_Append(pInsts, pInst) != 0)
 			goto err;
 
@@ -90,6 +108,7 @@ err:
 	Py_XDECREF(pInstName);
 	Py_XDECREF(pInstNumBytes);
 	Py_XDECREF(pInstStackEffect);
+	Py_XDECREF(pInstOperands); Py_XDECREF(pInstOperand);
 	return NULL;
 }
 
