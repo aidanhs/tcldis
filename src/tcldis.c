@@ -40,26 +40,35 @@ tcldis_inst_table(PyObject *self, PyObject *args, PyObject *kwargs)
 
 	InstructionDesc inst;
 	int i = 0;
-	PyObject *pStr;
+	PyObject *pInst = NULL;
+	PyObject *pInstName = NULL;
 	while (1) {
 		inst = insts[i];
 		if (inst.name == NULL)
 			break;
-		pStr = PyString_FromString(inst.name);
-		if (pStr == NULL) {
-			Py_DECREF(pInsts);
-			return NULL;
-		}
-		if (PyList_Append(pInsts, pStr) != 0) {
-			Py_DECREF(pStr);
-			Py_DECREF(pInsts);
-			return NULL;
-		}
-		Py_DECREF(pStr);
+
+		pInst = PyDict_New();
+
+		pInstName = PyString_FromString(inst.name);
+		if (pInstName == NULL)
+			goto err;
+		if (PyDict_SetItemString(pInst, "name", pInstName) != 0)
+			goto err;
+		Py_DECREF(pInstName);
+
+		if (PyList_Append(pInsts, pInst) != 0)
+			goto err;
+
 		i++;
 	}
 
 	return pInsts;
+
+err:
+	Py_XDECREF(pInsts);
+	Py_XDECREF(pInstName);
+	Py_XDECREF(pInst);
+	return NULL;
 }
 
 static PyMethodDef TclDisMethods[] = {
