@@ -59,14 +59,14 @@ tcldis_inst_table(PyObject *self, PyObject *args, PyObject *kwargs)
 			goto err;
 		if (PyDict_SetItemString(pInst, "name", pInstName) != 0)
 			goto err;
-		Py_DECREF(pInstName);
+		Py_CLEAR(pInstName);
 
 		pInstNumBytes = PyInt_FromLong(inst.numBytes);
 		if (pInstNumBytes == NULL)
 			goto err;
 		if (PyDict_SetItemString(pInst, "num_bytes", pInstNumBytes) != 0)
 			goto err;
-		Py_DECREF(pInstNumBytes);
+		Py_CLEAR(pInstNumBytes);
 
 		if (inst.stackEffect == INT_MIN) {
 			pInstStackEffect = PyString_FromString("op1");
@@ -77,7 +77,7 @@ tcldis_inst_table(PyObject *self, PyObject *args, PyObject *kwargs)
 			goto err;
 		if (PyDict_SetItemString(pInst, "stack_effect", pInstStackEffect) != 0)
 			goto err;
-		Py_DECREF(pInstStackEffect);
+		Py_CLEAR(pInstStackEffect);
 
 		pInstOperands = PyList_New(0);
 		if (pInstOperands == NULL)
@@ -88,11 +88,11 @@ tcldis_inst_table(PyObject *self, PyObject *args, PyObject *kwargs)
 				goto err;
 			if (PyList_Append(pInstOperands, pInstOperand) != 0)
 				goto err;
-			Py_DECREF(pInstOperand);
+			Py_CLEAR(pInstOperand);
 		}
 		if (PyDict_SetItemString(pInst, "operands", pInstOperands) != 0)
 			goto err;
-		Py_DECREF(pInstOperands);
+		Py_CLEAR(pInstOperands);
 
 		if (PyList_Append(pInsts, pInst) != 0)
 			goto err;
