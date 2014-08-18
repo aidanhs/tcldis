@@ -22,7 +22,8 @@ tcldis_test(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyMethodDef TclDisMethods[] = {
-	{"test",  (PyCFunction)tcldis_test, METH_VARARGS | METH_KEYWORDS, "test"},
+	{"test",  (PyCFunction)tcldis_test,
+		METH_VARARGS | METH_KEYWORDS, "test"},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
 
