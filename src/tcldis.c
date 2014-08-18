@@ -42,6 +42,8 @@ tcldis_inst_table(PyObject *self, PyObject *args, PyObject *kwargs)
 	int i = 0;
 	PyObject *pInst = NULL;
 	PyObject *pInstName = NULL;
+	PyObject *pInstNumBytes = NULL;
+	PyObject *pInstStackEffect = NULL;
 	while (1) {
 		inst = insts[i];
 		if (inst.name == NULL)
@@ -56,6 +58,24 @@ tcldis_inst_table(PyObject *self, PyObject *args, PyObject *kwargs)
 			goto err;
 		Py_DECREF(pInstName);
 
+		pInstNumBytes = PyInt_FromLong(inst.numBytes);
+		if (pInstNumBytes == NULL)
+			goto err;
+		if (PyDict_SetItemString(pInst, "num_bytes", pInstNumBytes) != 0)
+			goto err;
+		Py_DECREF(pInstNumBytes);
+
+		if (inst.stackEffect == INT_MIN) {
+			pInstStackEffect = PyString_FromString("op1");
+		} else {
+			pInstStackEffect = PyInt_FromLong(inst.stackEffect);
+		}
+		if (pInstStackEffect == NULL)
+			goto err;
+		if (PyDict_SetItemString(pInst, "stack_effect", pInstStackEffect) != 0)
+			goto err;
+		Py_DECREF(pInstStackEffect);
+
 		if (PyList_Append(pInsts, pInst) != 0)
 			goto err;
 
@@ -66,8 +86,10 @@ tcldis_inst_table(PyObject *self, PyObject *args, PyObject *kwargs)
 
 err:
 	Py_XDECREF(pInsts);
-	Py_XDECREF(pInstName);
 	Py_XDECREF(pInst);
+	Py_XDECREF(pInstName);
+	Py_XDECREF(pInstNumBytes);
+	Py_XDECREF(pInstStackEffect);
 	return NULL;
 }
 
