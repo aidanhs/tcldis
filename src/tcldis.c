@@ -1,6 +1,7 @@
 #include <Python.h>
 #include <tcl.h>
 #include <tclCompile.h>
+#include "tcl_bcutil.c"
 
 static Tcl_Interp *interp;
 extern const void *TclGetInstructionTable(void);
@@ -14,13 +15,28 @@ tcldis_test(PyObject *self, PyObject *args, PyObject *kwargs)
 		return NULL;
 
 	Tcl_Obj *tObj = Tcl_NewObj();
-	Tcl_AppendStringsToObj(tObj, "puts 1", NULL);
+	Tcl_IncrRefCount(tObj);
+	Tcl_AppendStringsToObj(tObj, "set x 1; if {$x} {puts 1}", NULL);
 
 	const Tcl_ObjType *bct = Tcl_GetObjType("bytecode");
-	if (Tcl_ConvertToType(interp, tObj, bct) != TCL_OK)
-		return PyLong_FromLong(1);
+	/*
+	 * This is unusual - even strings failing parsing return ok (and
+	 * create a bytecode object detailing the error)
+	 */
+	if (Tcl_ConvertToType(interp, tObj, bct) != TCL_OK) {
+		PyErr_SetString(PyExc_RuntimeError,
+			"failed to convert to tcl bytecode");
+		return NULL;
+	}
 
-	return PyLong_FromLong(0);
+	Tcl_Obj *tStr = TclDisassembleByteCodeObj(tObj);
+	Tcl_IncrRefCount(tStr);
+
+	PyObject *pStr = PyString_FromString(Tcl_GetString(tStr));
+
+	Tcl_DecrRefCount(tStr);
+	Tcl_DecrRefCount(tObj);
+	return pStr;
 }
 
 static PyObject *
