@@ -27,8 +27,10 @@ CFLAGS = \
 #  - check stubs are supported (TCL_SUPPORTS_STUBS)
 
 TCLCONFIG?=/usr/lib/tclConfig.sh
+TCL_SRC     = $(shell . $(TCLCONFIG); echo $$TCL_SRC_DIR)
 TCL_LIB     = $(shell . $(TCLCONFIG); echo $$TCL_LIB_SPEC)
 TCL_INCLUDE = $(shell . $(TCLCONFIG); echo $$TCL_INCLUDE_SPEC)
+TCL_INCLUDE += -I$(TCL_SRC)/unix -I$(TCL_SRC)/generic
 PY_LIB      = $(shell python-config --libs)
 PY_INCLUDE  = $(shell python-config --includes)
 PY_LIBFILE  = $(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_config_var("LDLIBRARY")')
