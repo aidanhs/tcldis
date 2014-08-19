@@ -27,18 +27,39 @@ OPERANDS = [
     ('AUX4',  getop(4,'>I')),
 ]
 
-def getinst(bc):
-    inst = INSTRUCTIONS[bc.pop(0)]
-    ops = []
-    for opnum in inst['operands']:
-        optype = OPERANDS[opnum]
-        ops.append((optype[0], optype[1](bc)))
-    return (inst['name'], tuple(ops))
+class Inst(object):
+    def __init__(self, *args, **kwargs):
+        super(Inst, self).__init__(*args, **kwargs)
+        self.name = None
+        self.ops = []
+        self.loc = None
+    def __repr__(self):
+        return '<%s: %s %s>' % (
+            self.loc if self.loc is not None else '?',
+            self.name,
+            self.ops
+        )
 
-def decompile(tcl_code):
+def getinst(bc, pc=None):
+    insttype = INSTRUCTIONS[bc.pop(0)]
+    inst = Inst()
+    inst.name = insttype['name']
+    inst.loc = pc
+    for opnum in insttype['operands']:
+        optype = OPERANDS[opnum]
+        inst.ops.append((optype[0], optype[1](bc)))
+    return inst
+
+def getinsts(tcl_code):
     bc = getbc(tcl_code)
     insts = []
+    pc = 0
     while len(bc) > 0:
         oldlen = len(bc)
-        insts.append(getinst(bc))
+        inst = getinst(bc, pc)
+        insts.append(inst)
+        pc += oldlen - len(bc)
     return insts
+
+def decompile(tcl_code):
+    return getinsts(tcl_code)
