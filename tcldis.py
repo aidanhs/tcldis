@@ -45,6 +45,13 @@ class Inst(object):
             self.ops
         )
 
+class BBlock(object):
+    def __init__(self, *args, **kwargs):
+        super(BBlock, self).__init__(*args, **kwargs)
+        self.insts = []
+    def __repr__(self):
+        return 'BBlock(%s-%s)' % (self.insts[0].loc, self.insts[-1].loc)
+
 def getinsts(bytecode):
     bytecode = bytecode[:]
     insts = []
@@ -56,6 +63,53 @@ def getinsts(bytecode):
         bytecode = bytecode[num_bytes:]
     return insts
 
+def _bblock_analyse(insts):
+    # Identify the beginnings and ends of all basic blocks
+    starts = set()
+    ends = set()
+    jumps = ('jump1', 'jump4', 'jumpTrue1', 'jumpTrue4', 'jumpFalse1', 'jumpFalse4')
+    newstart = True
+    for i, inst in enumerate(insts):
+        if newstart:
+            starts.add(inst.loc)
+            newstart = False
+        if inst.name in jumps:
+            ends.add(inst.loc)
+            targetloc = inst.loc + inst.ops[0][1]
+            starts.add(targetloc)
+            newstart = True
+            # inst before target inst is end of a bblock
+            # search through instructions for instruction before the target
+            if targetloc != 0:
+                instbeforeidx = 0
+                while True:
+                    if insts[instbeforeidx+1].loc == targetloc: break
+                    instbeforeidx += 1
+                instbefore = insts[instbeforeidx]
+                ends.add(instbefore.loc)
+    ends.add(insts[-1].loc)
+    # Create the basic blocks
+    starts = sorted(list(starts))
+    ends = sorted(list(ends))
+    assert len(starts) == len(ends)
+    bblocks = []
+    bblock = None
+    for inst in insts:
+        if bblock is None:
+            assert inst.loc == starts[0]
+            starts.pop(0)
+            bblock = BBlock()
+        else:
+            assert inst.loc != starts[0]
+        bblock.insts.append(inst)
+        if inst.loc == ends[0]:
+            ends.pop(0)
+            bblocks.append(bblock)
+            bblock = None
+    return bblocks
+
 def decompile(tcl_code):
     bytecode = getbc(tcl_code)
-    return getinsts(bytecode)
+    insts = getinsts(bytecode)
+    bblocks = _bblock_analyse(insts)
+    return bblocks, insts
