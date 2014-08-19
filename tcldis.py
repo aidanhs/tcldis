@@ -52,11 +52,11 @@ class BCValue(object):
         super(BCValue, self).__init__(*args, **kwargs)
         self.value = value
 
-class BCExpression(BCValue):
+class BCLiteral(BCValue):
     def __init__(self, *args, **kwargs):
-        super(BCExpression, self).__init__(*args, **kwargs)
+        super(BCLiteral, self).__init__(*args, **kwargs)
     def __repr__(self):
-        return 'BCExpression(%s)' % (repr(self.value),)
+        return 'BCLiteral(%s)' % (repr(self.value),)
 
 class BCVarRef(BCValue):
     def __init__(self, *args, **kwargs):
@@ -142,10 +142,9 @@ def _bblock_reduce(bblock, literals):
         for i, inst in enumerate(bblock.insts[:]):
             if isinstance(inst, BCValue): continue
             if inst.name in ('push1', 'push4'):
-                bblock.insts[i] = BCExpression(literals[inst.ops[0][1]])
+                bblock.insts[i] = BCLiteral(literals[inst.ops[0][1]])
                 loopchange = True
                 break
-            # proc call
             if inst.name in ('invokeStk1', 'invokeStk4'):
                 numargs = inst.ops[0][1]
                 arglist = bblock.insts[i-numargs:i]
