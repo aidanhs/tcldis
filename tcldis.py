@@ -102,14 +102,21 @@ def _bblock_create(insts):
         bblocks.append(bblock)
     return bblocks
 
-def _bblock_varinsert(bblock, tclvars):
+def _bblock_literals(bblock, tclvars):
     for inst in bblock.insts:
         if inst.name in ('push1', 'push4'):
             inst.ops = [tclvars[op_val] for op_type, op_val in inst.ops]
+
+def _bblock_reduce(bblock):
+    return False
 
 def decompile(tcl_code):
     bytecode, tclvars = getbc(tcl_code)
     insts = getinsts(bytecode)
     bblocks = _bblock_create(insts)
-    [_bblock_varinsert(bblock, tclvars) for bblock in bblocks]
-    return bblocks, insts
+    # Insert literals into instructions
+    [_bblock_literals(bblock, tclvars) for bblock in bblocks]
+    # Reduce bblock logic
+    while any([_bblock_reduce(bblock) for bblock in bblocks]):
+        pass
+    return [bblock.insts for bblock in bblocks]
