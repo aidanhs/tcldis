@@ -22,6 +22,10 @@ Reference:
    - `takes: string of valid tcl code`
    - `returns: a human readable interpretation of the code when compiled`
    - `side effects: none`
+ - `tcldis.getbc(tcl_code)`
+   - `takes: string of valid tcl code`
+   - `returns: literal bytes of compiled Tcl bytecode`
+   - `side effects: none`
 
 UNIX BUILD
 ----------

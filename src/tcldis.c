@@ -42,6 +42,40 @@ tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
+tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+	static char *kwlist[] = {"tcl_code", NULL};
+	char *tclCode;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist, &tclCode))
+		return NULL;
+
+	Tcl_Obj *tObj = Tcl_NewObj();
+	Tcl_IncrRefCount(tObj);
+	Tcl_AppendStringsToObj(tObj, tclCode, NULL);
+
+	const Tcl_ObjType *bct = Tcl_GetObjType("bytecode");
+	/*
+	 * This is unusual - even strings failing parsing return ok (and
+	 * create a bytecode object detailing the error)
+	 */
+	if (Tcl_ConvertToType(interp, tObj, bct) != TCL_OK) {
+		PyErr_SetString(PyExc_RuntimeError,
+			"failed to convert to tcl bytecode");
+		return NULL;
+	}
+
+	ByteCode *bc = tObj->internalRep.otherValuePtr;
+	/* If this errors we'll return NULL anyway, don't check explicitly */
+	/* The cast is fine because Python treats bytearrays as unsigned */
+	PyObject *pBuf = PyByteArray_FromStringAndSize(
+		(char *)bc->codeStart, bc->numCodeBytes);
+
+	Tcl_DecrRefCount(tObj);
+	return pBuf;
+}
+
+static PyObject *
 tcldis_inst_table(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 	static char *kwlist[] = {NULL};
@@ -133,6 +167,8 @@ err:
 static PyMethodDef TclDisMethods[] = {
 	{"printbc",  (PyCFunction)tcldis_printbc,
 		METH_VARARGS | METH_KEYWORDS, "print bytecode"},
+	{"getbc",  (PyCFunction)tcldis_getbc,
+		METH_VARARGS | METH_KEYWORDS, "get bytecode"},
 	{"inst_table",  (PyCFunction)tcldis_inst_table,
 		METH_VARARGS | METH_KEYWORDS, "get inst table"},
 	{NULL, NULL, 0, NULL} /* Sentinel */
