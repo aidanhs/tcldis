@@ -18,7 +18,7 @@ Reference:
       format described below:`
      - `{'stack_effect': 1, 'name': 'push1', 'operands': [3], 'num_bytes': 2}`
    - `side effects: none`
- - `tcldis.inst_table(tcl_code)`
+ - `tcldis.printbc(tcl_code)`
    - `takes: string of valid tcl code`
    - `returns: a human readable interpretation of the code when compiled`
    - `side effects: none`

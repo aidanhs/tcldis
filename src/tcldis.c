@@ -33,6 +33,7 @@ tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	Tcl_Obj *tStr = TclDisassembleByteCodeObj(tObj);
 	Tcl_IncrRefCount(tStr);
 
+	/* If this errors we'll return NULL anyway, don't check explicitly */
 	PyObject *pStr = PyString_FromString(Tcl_GetString(tStr));
 
 	Tcl_DecrRefCount(tStr);
