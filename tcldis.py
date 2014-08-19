@@ -133,6 +133,16 @@ def _bblock_reduce(bblock, literals):
                 bblock.insts[i] = BCExpression(literals[inst.ops[0][1]])
                 loopchange = True
                 break
+            # proc call
+            if inst.name in ('invokeStk1', 'invokeStk4'):
+                numargs = inst.ops[0][1]
+                arglist = bblock.insts[i-numargs:i]
+                # If we've not reduced all arguments, can't reduce the call
+                if not all([isinstance(inst, BCValue) for inst in arglist]):
+                    continue
+                bblock.insts[i-numargs:i+1] = [BCProcCall(arglist)]
+                loopchange = True
+                break
 
 def decompile(tcl_code):
     bytecode, literals = getbc(tcl_code)
