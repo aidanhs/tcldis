@@ -4,7 +4,6 @@
 #include "tcl_bcutil.c"
 
 static Tcl_Interp *interp;
-extern const void *TclGetInstructionTable(void);
 
 static PyObject *
 tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
