@@ -33,7 +33,10 @@ tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	Tcl_IncrRefCount(tStr);
 
 	/* If this errors we'll return NULL anyway, don't check explicitly */
-	PyObject *pStr = PyString_FromString(Tcl_GetString(tStr));
+	char *str;
+	int strsize;
+	str = Tcl_GetStringFromObj(tStr, &strsize);
+	PyObject *pStr = PyString_FromStringAndSize(str, strsize);
 
 	Tcl_DecrRefCount(tStr);
 	Tcl_DecrRefCount(tObj);
