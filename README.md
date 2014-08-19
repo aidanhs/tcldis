@@ -24,7 +24,7 @@ Reference:
    - `side effects: none`
  - `tcldis.getbc(tcl_code)`
    - `takes: string of valid tcl code`
-   - `returns: literal bytes of compiled Tcl bytecode`
+   - `returns: byte array of compiled Tcl bytecode, list of literal values`
    - `side effects: none`
 
 UNIX BUILD

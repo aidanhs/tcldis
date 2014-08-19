@@ -68,13 +68,35 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	}
 
 	ByteCode *bc = tObj->internalRep.otherValuePtr;
+
+	PyObject *pTclVars = PyList_New(0);
+	if (pTclVars == NULL)
+		return NULL;
+	int i, tclVarSize;
+	char *tclVar;
+	PyObject *pTclVar;
+	for (i = 0; i < bc->numLitObjects; i++) {
+		tclVar = Tcl_GetStringFromObj(bc->objArrayPtr[i], &tclVarSize);
+		pTclVar = PyString_FromStringAndSize(tclVar, tclVarSize);
+		if (pTclVar == NULL || PyList_Append(pTclVars, pTclVar) != 0) {
+			Py_CLEAR(pTclVars);
+			break;
+		}
+	}
+
 	/* If this errors we'll return NULL anyway, don't check explicitly */
 	/* The cast is fine because Python treats bytearrays as unsigned */
 	PyObject *pBuf = PyByteArray_FromStringAndSize(
 		(char *)bc->codeStart, bc->numCodeBytes);
 
 	Tcl_DecrRefCount(tObj);
-	return pBuf;
+
+	if (pTclVars == NULL || pBuf == NULL) {
+		Py_CLEAR(pTclVars);
+		Py_CLEAR(pBuf);
+		return NULL;
+	}
+	return Py_BuildValue("NN", pBuf, pTclVars);
 }
 
 static PyObject *

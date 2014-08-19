@@ -63,7 +63,7 @@ def getinsts(bytecode):
         bytecode = bytecode[num_bytes:]
     return insts
 
-def _bblock_analyse(insts):
+def _bblock_create(insts):
     # Identify the beginnings and ends of all basic blocks
     starts = set()
     ends = set()
@@ -102,8 +102,14 @@ def _bblock_analyse(insts):
         bblocks.append(bblock)
     return bblocks
 
+def _bblock_varinsert(bblock, tclvars):
+    for inst in bblock.insts:
+        if inst.name in ('push1', 'push4'):
+            inst.ops = [tclvars[op_val] for op_type, op_val in inst.ops]
+
 def decompile(tcl_code):
-    bytecode = getbc(tcl_code)
+    bytecode, tclvars = getbc(tcl_code)
     insts = getinsts(bytecode)
-    bblocks = _bblock_analyse(insts)
+    bblocks = _bblock_create(insts)
+    [_bblock_varinsert(bblock, tclvars) for bblock in bblocks]
     return bblocks, insts
