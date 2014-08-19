@@ -58,6 +58,12 @@ class BCExpression(BCValue):
     def __repr__(self):
         return 'BCExpression(%s)' % (repr(self.value),)
 
+class BCVarRef(BCValue):
+    def __init__(self, *args, **kwargs):
+        super(BCVarRef, self).__init__(*args, **kwargs)
+    def __repr__(self):
+        return 'BCVarRef(%s)' % (repr(self.value),)
+
 class BCArrayRef(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCArrayRef, self).__init__(*args, **kwargs)
@@ -154,6 +160,14 @@ def _bblock_reduce(bblock, literals):
                 if not all([isinstance(inst, BCValue) for inst in arglist]):
                     continue
                 bblock.insts[i-numargs:i+1] = [BCArrayRef(arglist)]
+                loopchange = True
+                break
+            if inst.name in ('loadStk',):
+                numargs = 1
+                arglist = bblock.insts[i-numargs:i]
+                if not all([isinstance(inst, BCValue) for inst in arglist]):
+                    continue
+                bblock.insts[i-numargs:i+1] = [BCVarRef(arglist)]
                 loopchange = True
                 break
 
