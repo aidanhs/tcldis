@@ -28,11 +28,16 @@ OPERANDS = [
 ]
 
 class Inst(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, bytecode, loc, *args, **kwargs):
         super(Inst, self).__init__(*args, **kwargs)
-        self.name = None
+        inst_type = INSTRUCTIONS[bytecode.pop(0)]
+        self.name = inst_type['name']
         self.ops = []
-        self.loc = None
+        for opnum in inst_type['operands']:
+            optype = OPERANDS[opnum]
+            self.ops.append((optype[0], optype[1](bytecode)))
+        self.loc = loc
+
     def __repr__(self):
         return '<%s: %s %s>' % (
             self.loc if self.loc is not None else '?',
@@ -40,26 +45,17 @@ class Inst(object):
             self.ops
         )
 
-def getinst(bc, pc=None):
-    insttype = INSTRUCTIONS[bc.pop(0)]
-    inst = Inst()
-    inst.name = insttype['name']
-    inst.loc = pc
-    for opnum in insttype['operands']:
-        optype = OPERANDS[opnum]
-        inst.ops.append((optype[0], optype[1](bc)))
-    return inst
-
-def getinsts(tcl_code):
-    bc = getbc(tcl_code)
+def getinsts(bytecode):
+    bytecode = bytecode[:]
     insts = []
     pc = 0
-    while len(bc) > 0:
-        oldlen = len(bc)
-        inst = getinst(bc, pc)
-        insts.append(inst)
-        pc += oldlen - len(bc)
+    while len(bytecode) > 0:
+        num_bytes = INSTRUCTIONS[bytecode[0]]['num_bytes']
+        insts.append(Inst(bytecode[:num_bytes], pc))
+        pc += num_bytes
+        bytecode = bytecode[num_bytes:]
     return insts
 
 def decompile(tcl_code):
-    return getinsts(tcl_code)
+    bytecode = getbc(tcl_code)
+    return getinsts(bytecode)
