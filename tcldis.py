@@ -89,23 +89,17 @@ def _bblock_analyse(insts):
                 ends.add(instbefore.loc)
     ends.add(insts[-1].loc)
     # Create the basic blocks
-    starts = sorted(list(starts))
-    ends = sorted(list(ends))
     assert len(starts) == len(ends)
     bblocks = []
-    bblock = None
-    for inst in insts:
-        if bblock is None:
-            assert inst.loc == starts[0]
-            starts.pop(0)
-            bblock = BBlock()
-        else:
-            assert inst.loc != starts[0]
-        bblock.insts.append(inst)
-        if inst.loc == ends[0]:
-            ends.pop(0)
-            bblocks.append(bblock)
-            bblock = None
+    bblock_insts = insts[:]
+    for start, end in zip(sorted(list(starts)), sorted(list(ends))):
+        bblock = BBlock()
+        assert bblock_insts[0].loc == start
+        while bblock_insts[0].loc < end:
+            bblock.insts.append(bblock_insts.pop(0))
+        assert bblock_insts[0].loc == end
+        bblock.insts.append(bblock_insts.pop(0))
+        bblocks.append(bblock)
     return bblocks
 
 def decompile(tcl_code):
