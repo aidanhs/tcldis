@@ -58,6 +58,12 @@ class BCExpression(BCValue):
     def __repr__(self):
         return 'BCExpression(%s)' % (repr(self.value),)
 
+class BCArrayRef(BCValue):
+    def __init__(self, *args, **kwargs):
+        super(BCArrayRef, self).__init__(*args, **kwargs)
+    def __repr__(self):
+        return 'BCArrayRef(%s)' % (repr(self.value),)
+
 class BCProcCall(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCProcCall, self).__init__(*args, **kwargs)
@@ -147,10 +153,7 @@ def _bblock_reduce(bblock, literals):
                 arglist = bblock.insts[i-numargs:i]
                 if not all([isinstance(inst, BCValue) for inst in arglist]):
                     continue
-                print(arglist)
-                arrname, arrelt = arglist
-                arrexpression = '$%s(%s)' % (arrname.value, arrelt.value)
-                bblock.insts[i-numargs:i+1] = [BCExpression(arrexpression)]
+                bblock.insts[i-numargs:i+1] = [BCArrayRef(arglist)]
                 loopchange = True
                 break
 
