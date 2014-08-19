@@ -8,17 +8,23 @@ getbc = _tcldis.getbc
 
 INSTRUCTIONS = _tcldis.inst_table()
 
+def getop(numbytes, optype):
+    def getop_lambda(bc):
+        opbytes = ''.join([chr(bc.pop(0)) for i in range(numbytes)])
+        return struct.unpack(optype, opbytes)[0]
+    return getop_lambda
+
 # InstOperandType from tclCompile.h
 OPERANDS = [
     ('NONE',  None), # Should never be present
-    ('INT1',  lambda ba: struct.unpack('>b', ''.join([chr(ba.pop(0)) for i in range(1)]))),
-    ('INT4',  lambda ba: struct.unpack('>i', ''.join([chr(ba.pop(0)) for i in range(4)]))),
-    ('UINT1', lambda ba: struct.unpack('>B', ''.join([chr(ba.pop(0)) for i in range(1)]))),
-    ('UINT4', lambda ba: struct.unpack('>I', ''.join([chr(ba.pop(0)) for i in range(4)]))),
-    ('IDX4',  lambda ba: struct.unpack('>i', ''.join([chr(ba.pop(0)) for i in range(4)]))),
-    ('LVT1',  lambda ba: struct.unpack('>B', ''.join([chr(ba.pop(0)) for i in range(1)]))),
-    ('LVT4',  lambda ba: struct.unpack('>I', ''.join([chr(ba.pop(0)) for i in range(4)]))),
-    ('AUX4',  lambda ba: struct.unpack('>I', ''.join([chr(ba.pop(0)) for i in range(4)]))),
+    ('INT1',  getop(1,'>b')),
+    ('INT4',  getop(4,'>i')),
+    ('UINT1', getop(1,'>B')),
+    ('UINT4', getop(4,'>I')),
+    ('IDX4',  getop(4,'>i')),
+    ('LVT1',  getop(1,'>B')),
+    ('LVT4',  getop(4,'>I')),
+    ('AUX4',  getop(4,'>I')),
 ]
 
 def getinst(bc):
