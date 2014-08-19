@@ -134,6 +134,13 @@ def _bblock_create(insts):
         bblocks.append(bblock)
     return bblocks
 
+INST_REDUCTIONS = {
+    'invokeStk1': {'numargs': lambda inst: inst.ops[0][1], 'reducetype': BCProcCall},
+    'invokeStk4': {'numargs': lambda inst: inst.ops[0][1], 'reducetype': BCProcCall},
+    'loadArrayStk': {'numargs': lambda inst: 2, 'reducetype': BCArrayRef},
+    'loadStk': {'numargs': lambda inst: 1, 'reducetype': BCVarRef},
+}
+
 def _bblock_reduce(bblock, literals):
     change = False
     loopchange = True
@@ -145,28 +152,13 @@ def _bblock_reduce(bblock, literals):
                 bblock.insts[i] = BCLiteral(literals[inst.ops[0][1]])
                 loopchange = True
                 break
-            if inst.name in ('invokeStk1', 'invokeStk4'):
-                numargs = inst.ops[0][1]
+            elif inst.name in INST_REDUCTIONS:
+                IRED = INST_REDUCTIONS[inst.name]
+                numargs = IRED['numargs'](inst)
                 arglist = bblock.insts[i-numargs:i]
                 if not all([isinstance(inst, BCValue) for inst in arglist]):
                     continue
-                bblock.insts[i-numargs:i+1] = [BCProcCall(arglist)]
-                loopchange = True
-                break
-            if inst.name in ('loadArrayStk',):
-                numargs = 2
-                arglist = bblock.insts[i-numargs:i]
-                if not all([isinstance(inst, BCValue) for inst in arglist]):
-                    continue
-                bblock.insts[i-numargs:i+1] = [BCArrayRef(arglist)]
-                loopchange = True
-                break
-            if inst.name in ('loadStk',):
-                numargs = 1
-                arglist = bblock.insts[i-numargs:i]
-                if not all([isinstance(inst, BCValue) for inst in arglist]):
-                    continue
-                bblock.insts[i-numargs:i+1] = [BCVarRef(arglist)]
+                bblock.insts[i-numargs:i+1] = [IRED['reducetype'](arglist)]
                 loopchange = True
                 break
 
