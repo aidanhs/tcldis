@@ -27,6 +27,7 @@ OPERANDS = [
     ('AUX4',  getop(4,'>I')),
 ]
 
+# Tcl bytecode instruction
 class Inst(object):
     def __init__(self, bytecode, loc, *args, **kwargs):
         super(Inst, self).__init__(*args, **kwargs)
@@ -45,6 +46,25 @@ class Inst(object):
             self.ops
         )
 
+# The below three represent my interpretation of the Tcl stack
+class BCValue(object):
+    def __init__(self, value, *args, **kwargs):
+        super(BCValue, self).__init__(*args, **kwargs)
+        self.value = value
+
+class BCExpression(BCValue):
+    def __init__(self, *args, **kwargs):
+        super(BCExpression, self).__init__(*args, **kwargs)
+    def __repr__(self):
+        return 'BCExpression(%s)' % (repr(self.value),)
+
+class BCProcCall(BCValue):
+    def __init__(self, *args, **kwargs):
+        super(BCProcCall, self).__init__(*args, **kwargs)
+    def __repr__(self):
+        return 'BCProcCall(%s)' % (self.value,)
+
+# Basic block, containing a linear flow of logic
 class BBlock(object):
     def __init__(self, *args, **kwargs):
         super(BBlock, self).__init__(*args, **kwargs)
@@ -102,21 +122,23 @@ def _bblock_create(insts):
         bblocks.append(bblock)
     return bblocks
 
-def _bblock_literals(bblock, tclvars):
-    for inst in bblock.insts:
-        if inst.name in ('push1', 'push4'):
-            inst.ops = [tclvars[op_val] for op_type, op_val in inst.ops]
-
-def _bblock_reduce(bblock):
-    return False
+def _bblock_reduce(bblock, literals):
+    change = False
+    loopchange = True
+    while loopchange:
+        loopchange = False
+        for i, inst in enumerate(bblock.insts[:]):
+            if isinstance(inst, BCValue): continue
+            if inst.name in ('push1', 'push4'):
+                bblock.insts[i] = BCExpression(literals[inst.ops[0][1]])
+                loopchange = True
+                break
 
 def decompile(tcl_code):
-    bytecode, tclvars = getbc(tcl_code)
+    bytecode, literals = getbc(tcl_code)
     insts = getinsts(bytecode)
     bblocks = _bblock_create(insts)
-    # Insert literals into instructions
-    [_bblock_literals(bblock, tclvars) for bblock in bblocks]
     # Reduce bblock logic
-    while any([_bblock_reduce(bblock) for bblock in bblocks]):
+    while any([_bblock_reduce(bblock, literals) for bblock in bblocks]):
         pass
     return [bblock.insts for bblock in bblocks]
