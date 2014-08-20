@@ -169,6 +169,7 @@ INST_REDUCTIONS = {
     'loadArrayStk': {'numargs': lambda inst: 2, 'redfn': BCArrayRef},
     'loadStk': {'numargs': lambda inst: 1, 'redfn': BCVarRef},
     'pop': {'numargs': lambda inst: 1, 'redfn': BCNonValue, 'checktype': BCProcCall},
+    'storeStk': {'numargs': lambda inst: 2, 'redfn': lambda kv: BCProcCall([BCLiteral('set'), kv[0], kv[1]])},
 }
 
 def _bblock_reduce(bblock, literals):
