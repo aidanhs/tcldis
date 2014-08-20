@@ -85,6 +85,7 @@ class BCArrayRef(BCValue):
 class BCProcCall(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCProcCall, self).__init__(*args, **kwargs)
+        self.is_value = True
     def __repr__(self):
         return 'BCProcCall(%s)' % (self.value,)
     def fmt(self):
@@ -167,6 +168,13 @@ def _bblock_reduce(bblock, literals):
             if isinstance(inst, BCValue): continue
             if inst.name in ('push1', 'push4'):
                 bblock.insts[i] = BCLiteral(literals[inst.ops[0][1]])
+                loopchange = True
+                break
+            elif inst.name == 'pop':
+                if not isinstance(bblock.insts[i-1], BCProcCall):
+                    continue
+                bblock.insts[i-1].is_value = False
+                bblock.insts[i:i+1] = []
                 loopchange = True
                 break
             elif inst.name in INST_REDUCTIONS:
