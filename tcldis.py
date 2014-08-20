@@ -51,30 +51,47 @@ class BCValue(object):
     def __init__(self, value, *args, **kwargs):
         super(BCValue, self).__init__(*args, **kwargs)
         self.value = value
+    def __repr__(self):
+        assert False
+    def fmt(self, *args, **kwargs):
+        assert False
 
 class BCLiteral(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCLiteral, self).__init__(*args, **kwargs)
     def __repr__(self):
         return 'BCLiteral(%s)' % (repr(self.value),)
+    def fmt(self):
+        return self.value
 
 class BCVarRef(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCVarRef, self).__init__(*args, **kwargs)
     def __repr__(self):
         return 'BCVarRef(%s)' % (repr(self.value),)
+    def fmt(self):
+        assert len(self.value) == 1
+        return '$' + self.value[0].fmt()
 
 class BCArrayRef(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCArrayRef, self).__init__(*args, **kwargs)
     def __repr__(self):
         return 'BCArrayRef(%s)' % (repr(self.value),)
+    def fmt(self):
+        assert len(self.value) == 2
+        return '$' + self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
 
 class BCProcCall(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCProcCall, self).__init__(*args, **kwargs)
     def __repr__(self):
         return 'BCProcCall(%s)' % (self.value,)
+    def fmt(self):
+        cmd = ' '.join([arg.fmt() for arg in self.value])
+        if self.is_value:
+            cmd = '[' + cmd + ']'
+        return cmd
 
 # Basic block, containing a linear flow of logic
 class BBlock(object):
@@ -162,6 +179,12 @@ def _bblock_reduce(bblock, literals):
                 loopchange = True
                 break
 
+def _bblock_format(bblock):
+    bblock.insts = [
+        inst.fmt() if isinstance(inst, BCValue) else inst
+        for inst in bblock.insts
+    ]
+
 def decompile(tcl_code):
     bytecode, literals = getbc(tcl_code)
     insts = getinsts(bytecode)
@@ -169,4 +192,5 @@ def decompile(tcl_code):
     # Reduce bblock logic
     while any([_bblock_reduce(bblock, literals) for bblock in bblocks]):
         pass
+    [_bblock_format(bblock) for bblock in bblocks]
     return [bblock.insts for bblock in bblocks]
