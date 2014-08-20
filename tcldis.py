@@ -168,6 +168,7 @@ INST_REDUCTIONS = {
     'invokeStk4': {'numargs': lambda inst: inst.ops[0][1], 'reducetype': BCProcCall},
     'loadArrayStk': {'numargs': lambda inst: 2, 'reducetype': BCArrayRef},
     'loadStk': {'numargs': lambda inst: 1, 'reducetype': BCVarRef},
+    'pop': {'numargs': lambda inst: 1, 'reducetype': BCNonValue, 'checktype': BCProcCall},
 }
 
 def _bblock_reduce(bblock, literals):
@@ -181,20 +182,18 @@ def _bblock_reduce(bblock, literals):
                 bblock.insts[i] = BCLiteral(literals[inst.ops[0][1]])
                 loopchange = True
                 break
-            elif inst.name == 'pop':
-                if not isinstance(bblock.insts[i-1], BCProcCall):
-                    continue
-                bblock.insts[i-1] = BCNonValue([bblock.insts[i-1]])
-                bblock.insts[i:i+1] = []
-                loopchange = True
-                break
+
             elif inst.name in INST_REDUCTIONS:
                 IRED = INST_REDUCTIONS[inst.name]
                 numargs = IRED['numargs'](inst)
+                checktype = IRED.get('checktype', BCValue)
+                reducetype = IRED['reducetype']
+
                 arglist = bblock.insts[i-numargs:i]
-                if not all([isinstance(inst, BCValue) for inst in arglist]):
+                if len(arglist) != numargs: continue
+                if not all([isinstance(inst, checktype) for inst in arglist]):
                     continue
-                bblock.insts[i-numargs:i+1] = [IRED['reducetype'](arglist)]
+                bblock.insts[i-numargs:i+1] = [reducetype(arglist)]
                 loopchange = True
                 break
 
