@@ -85,14 +85,25 @@ class BCArrayRef(BCValue):
 class BCProcCall(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCProcCall, self).__init__(*args, **kwargs)
-        self.is_value = True
     def __repr__(self):
         return 'BCProcCall(%s)' % (self.value,)
     def fmt(self):
         cmd = ' '.join([arg.fmt() for arg in self.value])
-        if self.is_value:
-            cmd = '[' + cmd + ']'
+        cmd = '[' + cmd + ']'
         return cmd
+
+# A pseudo bc object that deliberately doesn't subclass BCValue to
+# represent ignored return values from proc calls
+class BCNonValue(object):
+    def __init__(self, value, *args, **kwargs):
+        super(BCNonValue, self).__init__(*args, **kwargs)
+        self.value = value
+    def __repr__(self):
+        return 'BCNonValue(%s)' % (self.value,)
+    def fmt(self, *args, **kwargs):
+        assert len(self.value) == 1
+        assert isinstance(self.value[0], BCProcCall)
+        return self.value[0].fmt()[1:-1]
 
 # Basic block, containing a linear flow of logic
 class BBlock(object):
@@ -165,7 +176,7 @@ def _bblock_reduce(bblock, literals):
     while loopchange:
         loopchange = False
         for i, inst in enumerate(bblock.insts[:]):
-            if isinstance(inst, BCValue): continue
+            if not isinstance(inst, Inst): continue
             if inst.name in ('push1', 'push4'):
                 bblock.insts[i] = BCLiteral(literals[inst.ops[0][1]])
                 loopchange = True
@@ -173,7 +184,7 @@ def _bblock_reduce(bblock, literals):
             elif inst.name == 'pop':
                 if not isinstance(bblock.insts[i-1], BCProcCall):
                     continue
-                bblock.insts[i-1].is_value = False
+                bblock.insts[i-1] = BCNonValue([bblock.insts[i-1]])
                 bblock.insts[i:i+1] = []
                 loopchange = True
                 break
@@ -189,7 +200,7 @@ def _bblock_reduce(bblock, literals):
 
 def _bblock_format(bblock):
     bblock.insts = [
-        inst.fmt() if isinstance(inst, BCValue) else inst
+        inst.fmt() if not isinstance(inst, Inst) else inst
         for inst in bblock.insts
     ]
 
