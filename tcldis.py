@@ -92,14 +92,21 @@ class BCProcCall(BCValue):
         cmd = '[' + cmd + ']'
         return cmd
 
-# A pseudo bc object that deliberately doesn't subclass BCValue to
-# represent ignored return values from proc calls
 class BCNonValue(object):
     def __init__(self, value, *args, **kwargs):
         super(BCNonValue, self).__init__(*args, **kwargs)
         self.value = value
     def __repr__(self):
-        return 'BCNonValue(%s)' % (self.value,)
+        assert False
+    def fmt(self, *args, **kwargs):
+        assert False
+
+# Represents ignored return values from proc calls
+class BCIgnoredProcCall(BCNonValue):
+    def __init__(self, *args, **kwargs):
+        super(BCIgnoredProcCall, self).__init__(*args, **kwargs)
+    def __repr__(self):
+        return 'BCIgnoredProcCall(%s)' % (self.value,)
     def fmt(self, *args, **kwargs):
         assert len(self.value) == 1
         assert isinstance(self.value[0], BCProcCall)
@@ -172,7 +179,7 @@ def _inst_reductions():
         'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
         'nop': {'nargs': N(0), 'redfn': lambda _: []},
-        'pop': {'nargs': N(1), 'redfn': BCNonValue, 'checktype': BCProcCall},
+        'pop': {'nargs': N(1), 'redfn': BCIgnoredProcCall, 'checktype': BCProcCall},
         'storeStk': {'nargs': N(2), 'redfn': lambda kv: BCProcCall([BCLiteral('set'), kv[0], kv[1]])},
     }
     return inst_reductions
