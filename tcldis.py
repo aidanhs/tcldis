@@ -163,14 +163,21 @@ def _bblock_create(insts):
         bblocks.append(bblock)
     return bblocks
 
-INST_REDUCTIONS = {
-    'invokeStk1': {'numargs': lambda inst: inst.ops[0][1], 'redfn': BCProcCall},
-    'invokeStk4': {'numargs': lambda inst: inst.ops[0][1], 'redfn': BCProcCall},
-    'loadArrayStk': {'numargs': lambda inst: 2, 'redfn': BCArrayRef},
-    'loadStk': {'numargs': lambda inst: 1, 'redfn': BCVarRef},
-    'pop': {'numargs': lambda inst: 1, 'redfn': BCNonValue, 'checktype': BCProcCall},
-    'storeStk': {'numargs': lambda inst: 2, 'redfn': lambda kv: BCProcCall([BCLiteral('set'), kv[0], kv[1]])},
-}
+def _inst_reductions():
+    def N(n): return lambda _: n
+    firstop = lambda inst: inst.ops[0][1]
+    inst_reductions = {
+        'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
+        'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
+        'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
+        'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
+        'nop': {'nargs': N(1), 'redfn': lambda x: x[0]}, # This is cheating a bit...
+        'pop': {'nargs': N(1), 'redfn': BCNonValue, 'checktype': BCProcCall},
+        'storeStk': {'nargs': N(2), 'redfn': lambda kv: BCProcCall([BCLiteral('set'), kv[0], kv[1]])},
+    }
+    return inst_reductions
+
+INST_REDUCTIONS = _inst_reductions()
 
 def _bblock_reduce(bblock, literals):
     change = False
@@ -186,15 +193,15 @@ def _bblock_reduce(bblock, literals):
 
             elif inst.name in INST_REDUCTIONS:
                 IRED = INST_REDUCTIONS[inst.name]
-                numargs = IRED['numargs'](inst)
+                nargs = IRED['nargs'](inst)
                 checktype = IRED.get('checktype', BCValue)
                 redfn = IRED['redfn']
 
-                arglist = bblock.insts[i-numargs:i]
-                if len(arglist) != numargs: continue
+                arglist = bblock.insts[i-nargs:i]
+                if len(arglist) != nargs: continue
                 if not all([isinstance(inst, checktype) for inst in arglist]):
                     continue
-                bblock.insts[i-numargs:i+1] = [redfn(arglist)]
+                bblock.insts[i-nargs:i+1] = [redfn(arglist)]
                 loopchange = True
                 break
 
