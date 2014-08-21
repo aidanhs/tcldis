@@ -171,7 +171,7 @@ def _inst_reductions():
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
         'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
-        'nop': {'nargs': N(1), 'redfn': lambda x: x[0]}, # This is cheating a bit...
+        'nop': {'nargs': N(0), 'redfn': lambda _: []},
         'pop': {'nargs': N(1), 'redfn': BCNonValue, 'checktype': BCProcCall},
         'storeStk': {'nargs': N(2), 'redfn': lambda kv: BCProcCall([BCLiteral('set'), kv[0], kv[1]])},
     }
@@ -201,7 +201,10 @@ def _bblock_reduce(bblock, literals):
                 if len(arglist) != nargs: continue
                 if not all([isinstance(inst, checktype) for inst in arglist]):
                     continue
-                bblock.insts[i-nargs:i+1] = [redfn(arglist)]
+                newinsts = redfn(arglist)
+                if type(newinsts) is not list:
+                    newinsts = [newinsts]
+                bblock.insts[i-nargs:i+1] = newinsts
                 loopchange = True
                 break
 
