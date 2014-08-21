@@ -114,11 +114,12 @@ class BCIgnoredProcCall(BCNonValue):
 
 # Basic block, containing a linear flow of logic
 class BBlock(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, insts, loc, *args, **kwargs):
         super(BBlock, self).__init__(*args, **kwargs)
-        self.insts = []
+        self.insts = insts
+        self.loc = loc
     def __repr__(self):
-        return 'BBlock(%s-%s)' % (self.insts[0].loc, self.insts[-1].loc)
+        return 'BBlock(at %s, %s insts)' % (self.loc, len(self.insts))
 
 def getinsts(bytecode):
     bytecode = bytecode[:]
@@ -159,15 +160,15 @@ def _bblock_create(insts):
     # Create the basic blocks
     assert len(starts) == len(ends)
     bblocks = []
-    bblock_insts = insts[:]
+    bblocks_insts = insts[:]
     for start, end in zip(sorted(list(starts)), sorted(list(ends))):
-        bblock = BBlock()
-        assert bblock_insts[0].loc == start
-        while bblock_insts[0].loc < end:
-            bblock.insts.append(bblock_insts.pop(0))
-        assert bblock_insts[0].loc == end
-        bblock.insts.append(bblock_insts.pop(0))
-        bblocks.append(bblock)
+        bbinsts = []
+        assert bblocks_insts[0].loc == start
+        while bblocks_insts[0].loc < end:
+            bbinsts.append(bblocks_insts.pop(0))
+        assert bblocks_insts[0].loc == end
+        bbinsts.append(bblocks_insts.pop(0))
+        bblocks.append(BBlock(bbinsts, bbinsts[0].loc))
     return bblocks
 
 def _inst_reductions():
