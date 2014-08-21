@@ -51,10 +51,8 @@ class BCValue(object):
     def __init__(self, value, *args, **kwargs):
         super(BCValue, self).__init__(*args, **kwargs)
         self.value = value
-    def __repr__(self):
-        assert False
-    def fmt(self, *args, **kwargs):
-        assert False
+    def __repr__(self): assert False
+    def fmt(self, *args, **kwargs): assert False
 
 class BCLiteral(BCValue):
     def __init__(self, *args, **kwargs):
@@ -67,19 +65,19 @@ class BCLiteral(BCValue):
 class BCVarRef(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCVarRef, self).__init__(*args, **kwargs)
+        assert len(self.value) == 1
     def __repr__(self):
         return 'BCVarRef(%s)' % (repr(self.value),)
     def fmt(self):
-        assert len(self.value) == 1
         return '$' + self.value[0].fmt()
 
 class BCArrayRef(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCArrayRef, self).__init__(*args, **kwargs)
+        assert len(self.value) == 2
     def __repr__(self):
         return 'BCArrayRef(%s)' % (repr(self.value),)
     def fmt(self):
-        assert len(self.value) == 2
         return '$' + self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
 
 class BCProcCall(BCValue):
@@ -96,20 +94,18 @@ class BCNonValue(object):
     def __init__(self, value, *args, **kwargs):
         super(BCNonValue, self).__init__(*args, **kwargs)
         self.value = value
-    def __repr__(self):
-        assert False
-    def fmt(self, *args, **kwargs):
-        assert False
+    def __repr__(self): assert False
+    def fmt(self, *args, **kwargs): assert False
 
 # Represents ignored return values from proc calls
 class BCIgnoredProcCall(BCNonValue):
     def __init__(self, *args, **kwargs):
         super(BCIgnoredProcCall, self).__init__(*args, **kwargs)
+        assert len(self.value) == 1
+        assert isinstance(self.value[0], BCProcCall)
     def __repr__(self):
         return 'BCIgnoredProcCall(%s)' % (self.value,)
     def fmt(self, *args, **kwargs):
-        assert len(self.value) == 1
-        assert isinstance(self.value[0], BCProcCall)
         return self.value[0].fmt()[1:-1]
 
 # Basic block, containing a linear flow of logic
