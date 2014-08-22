@@ -74,7 +74,7 @@ class BCValue(object):
     def stack(self, n=None):
         if n is None:
             return self._stackn
-        assert isinstance(self, BCProcCall)
+        assert isinstance(self, BCProcCall) or isinstance(self, BCIf)
         assert n == -1
         assert self._stackn == 1
         self._stackn -= 1
@@ -88,7 +88,7 @@ class BCLiteral(BCValue):
         return 'BCLiteral(%s)' % (repr(self.value),)
     def fmt(self):
         val = self.value
-        if val == '': return '""'
+        if val == '': return '{}'
         if not any([c in val for c in '[]{}""\f\r\n\t\v ']):
             return val
 
@@ -150,7 +150,39 @@ class BCProcCall(BCValue):
         return 'BCProcCall(%s)' % (self.value,)
     def fmt(self):
         cmd = ' '.join([arg.fmt() for arg in self.value])
-        if self._stackn == 1:
+        if self.stack():
+            cmd = '[' + cmd + ']'
+        return cmd
+
+class BCIf(BCValue):
+    def __init__(self, *args, **kwargs):
+        super(BCIf, self).__init__(*args, **kwargs)
+        assert len(self.value) == len(self.inst) == 2
+        assert all([isinstance(jump, BCJump) for jump in self.inst])
+        assert self.inst[0].on in (True, False) and self.inst[1].on is None
+        # An if condition takes 'ownership' of the values returned in any
+        # of its branches
+        for bblock in self.value:
+            inst = bblock.insts[-1]
+            if isinstance(inst, BCLiteral):
+                assert inst.fmt() == '{}'
+                bblock.insts[-1:] = []
+            else:
+                inst.stack(-1)
+    def __repr__(self):
+        return 'BCIf(%s)' % (self.value,)
+    def fmt(self):
+        conditionstr = self.inst[0].value[0].fmt()
+        if self.inst[0].on is True:
+            conditionstr = '!' + conditionstr
+        cmd = (
+            'if {%s} {' +
+            '\n\t' + self.value[0].fmt().replace('\n', '\n\t') + '\n' +
+            '} else {' +
+            '\n\t' + self.value[1].fmt().replace('\n', '\n\t') + '\n' +
+            '}'
+        ) % (conditionstr,)
+        if self.stack():
             cmd = '[' + cmd + ']'
         return cmd
 
@@ -198,34 +230,6 @@ class BBlock(object):
             inst.fmt() if not isinstance(inst, Inst) else str(inst)
             for inst in self.insts
         ])
-
-class BBFlow(object):
-    def __init__(self, bblocks,  *args, **kwargs):
-        super(BBFlow, self).__init__(*args, **kwargs)
-        self.bblocks = bblocks
-    def __repr__(self): assert False
-    def fmt(self): assert False
-
-class BBFlowIf(BBFlow):
-    def __init__(self, jumps, *args, **kwargs):
-        super(BBFlowIf, self).__init__(*args, **kwargs)
-        assert len(self.bblocks) == 2
-        assert all([isinstance(jump, BCJump) for jump in jumps])
-        assert jumps[0].on in (True, False) and jumps[1].on is None
-        self.jumps = jumps
-    def __repr__(self):
-        return 'BBFlowIf(%s)' % (self.bblocks,)
-    def fmt(self):
-        conditionstr = self.jumps[0].value[0].fmt()
-        if self.jumps[0].on is True:
-            conditionstr = '!' + conditionstr
-        return (
-            'if {%s} {' +
-            '\n\t' + self.bblocks[0].fmt().replace('\n', '\n\t') + '\n' +
-            '} else {' +
-            '\n\t' + self.bblocks[1].fmt().replace('\n', '\n\t') + '\n' +
-            '}'
-        ) % (conditionstr,)
 
 ########################
 # Functions start here #
@@ -373,7 +377,7 @@ def _bblock_flow(bblocks):
     #   |---------|----------^          ^        <- conditional jump to else
     #             |---------------------|        <- unconditional jump to end
     # We only care about the end block for checking that everything does end up
-    # there. The other three blocks end up 'consumed' by a BBFlowIf object.
+    # there. The other three blocks end up 'consumed' by a BCIf object.
     change = False
     loopchange = True
     while loopchange:
@@ -398,7 +402,7 @@ def _bblock_flow(bblocks):
             if targets.count(bblocks[i+2]) > 1: continue
             jumps = [bblocks[i+0].insts.pop(), bblocks[i+1].insts.pop()]
             assert jumps == [jump0, jump1]
-            bblocks[i].insts.append(BBFlowIf(jumps, bblocks[i+1:i+3]))
+            bblocks[i].insts.append(BCIf(jumps, bblocks[i+1:i+3]))
             bblocks[i+1:i+3] = []
             loopchange = True
             break
