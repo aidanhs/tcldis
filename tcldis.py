@@ -7,6 +7,9 @@ printbc = _tcldis.printbc
 getbc = _tcldis.getbc
 
 INSTRUCTIONS = _tcldis.inst_table()
+JUMP_INSTRUCTIONS = (
+    'jump1', 'jump4', 'jumpTrue1', 'jumpTrue4', 'jumpFalse1', 'jumpFalse4'
+)
 
 def getop(numbytes, optype):
     def getop_lambda(bc):
@@ -38,6 +41,8 @@ class Inst(object):
             optype = OPERANDS[opnum]
             self.ops.append((optype[0], optype[1](bytecode)))
         self.loc = loc
+        if self.name in JUMP_INSTRUCTIONS:
+            self.targetloc = self.loc + self.ops[0][1]
 
     def __repr__(self):
         return '<%s: %s %s>' % (
@@ -110,6 +115,18 @@ class BCIgnoredProcCall(BCNonValue):
     def fmt(self, *args, **kwargs):
         return self.value[0].fmt()[1:-1]
 
+class BCJump(BCNonValue):
+    def __init__(self, on, *args, **kwargs):
+        super(BCJump, self).__init__(*args, **kwargs)
+        assert len(self.value) == 1
+        self.on = on
+        self.targetloc = self.inst.targetloc
+    def __repr__(self):
+        return 'BCJump(%s==%s)->%s' % (self.on, self.value, self.inst.targetloc)
+    def fmt(self, *args, **kwargs):
+        #return 'JUMP%s(%s)' % (self.on, self.value[0].fmt())
+        return str(self)
+
 # Basic block, containing a linear flow of logic
 class BBlock(object):
     def __init__(self, insts, loc, *args, **kwargs):
@@ -134,23 +151,21 @@ def _bblock_create(insts):
     # Identify the beginnings and ends of all basic blocks
     starts = set()
     ends = set()
-    jumps = ('jump1', 'jump4', 'jumpTrue1', 'jumpTrue4', 'jumpFalse1', 'jumpFalse4')
     newstart = True
     for i, inst in enumerate(insts):
         if newstart:
             starts.add(inst.loc)
             newstart = False
-        if inst.name in jumps:
+        if inst.name in JUMP_INSTRUCTIONS:
             ends.add(inst.loc)
-            targetloc = inst.loc + inst.ops[0][1]
-            starts.add(targetloc)
+            starts.add(inst.targetloc)
             newstart = True
             # inst before target inst is end of a bblock
             # search through instructions for instruction before the target
-            if targetloc != 0:
+            if inst.targetloc != 0:
                 instbeforeidx = 0
                 while True:
-                    if insts[instbeforeidx+1].loc == targetloc: break
+                    if insts[instbeforeidx+1].loc == inst.targetloc: break
                     instbeforeidx += 1
                 instbefore = insts[instbeforeidx]
                 ends.add(instbefore.loc)
@@ -175,6 +190,8 @@ def _inst_reductions():
     inst_reductions = {
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
+        'jumpFalse1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(False, i, v)},
+        'jumpTrue1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(True, i, v)},
         'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
         'nop': {'nargs': N(0), 'redfn': lambda _1, _2: []},
