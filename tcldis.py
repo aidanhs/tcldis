@@ -257,7 +257,6 @@ def _bblock_reduce(bblock, literals):
     For the given basic block, attempt to reduce all instructions to my higher
     level representations.
     """
-    change = False
     loopchange = True
     while loopchange:
         loopchange = False
