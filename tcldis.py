@@ -155,6 +155,11 @@ class BBlock(object):
         self.loc = loc
     def __repr__(self):
         return 'BBlock(at %s, %s insts)' % (self.loc, len(self.insts))
+    def fmt(self):
+        return '\n'.join([
+            inst.fmt() if not isinstance(inst, Inst) else str(inst)
+            for inst in self.insts
+        ]) + '\n'
 
 class BBFlow(object):
     def __init__(self,  *args, **kwargs):
@@ -284,14 +289,6 @@ def _bblock_reduce(bblock, literals):
                 loopchange = True
                 break
 
-def _bblock_format(bblock):
-    """
-    Return the details of the basic block.
-    """
-    bblock.insts = [
-        inst.fmt() if not isinstance(inst, Inst) else inst
-        for inst in bblock.insts
-    ]
 
 def decompile(tcl_code):
     """
@@ -302,10 +299,7 @@ def decompile(tcl_code):
     bblocks = _bblock_create(insts)
     # Reduce bblock logic
     [_bblock_reduce(bblock, literals) for bblock in bblocks]
-    [_bblock_format(bblock) for bblock in bblocks]
     outstr = ''
     for bblock in bblocks:
-        for inst in bblock.insts:
-            outstr += str(inst)
-            outstr += '\n'
+        outstr += bblock.fmt()
     return outstr
