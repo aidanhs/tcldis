@@ -317,18 +317,12 @@ def _inst_reductions():
     def N(n): return lambda _: n
     firstop = lambda inst: inst.ops[0][1]
     def destack(v): v.stack(-1); return v
-    def can_destack(arglist):
-        return all([
-            isinstance(arg, BCProcCall) or isinstance(arg, BCIf)
-            for arg in arglist
-        ])
-    def is_simple(arglist):
-        return all([
-            any([
-                isinstance(arg, bctype)
-                for bctype in [BCLiteral, BCVarRef, BCArrayRef]
-            ])
-            for arg in arglist
+    def can_destack(arg):
+        return isinstance(arg, BCProcCall) or isinstance(arg, BCIf)
+    def is_simple(arg):
+        return any([
+            isinstance(arg, bctype)
+            for bctype in [BCLiteral, BCVarRef, BCArrayRef]
         ])
     inst_reductions = {
         # Callers
@@ -356,7 +350,7 @@ def _inst_reductions():
     }
     for details in inst_reductions.values():
         if 'checkfn' not in details:
-            details['checkfn'] = lambda arglist: all([isinstance(arg, BCValue) for arg in arglist])
+            details['checkfn'] = lambda arg: isinstance(arg, BCValue)
     return inst_reductions
 
 INST_REDUCTIONS = _inst_reductions()
@@ -386,7 +380,7 @@ def _bblock_reduce(bblock, literals):
 
                 arglist = bblock.insts[i-nargs:i]
                 if len(arglist) != nargs: continue
-                if not checkfn(arglist): continue
+                if not all([checkfn(arg) for arg in arglist]): continue
                 newinsts = redfn(inst, arglist)
                 if type(newinsts) is not list:
                     newinsts = [newinsts]
