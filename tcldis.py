@@ -63,12 +63,21 @@ class Inst(object):
 # My own representation of anything that can be used as a value #
 #################################################################
 
-# The below three represent my interpretation of the Tcl stack
+# The below represent my interpretation of the Tcl stack machine
 class BCValue(object):
     def __init__(self, inst, value, *args, **kwargs):
         super(BCValue, self).__init__(*args, **kwargs)
+        assert all([v.stack() == 1 for v in value if isinstance(v, BCValue)])
         self.inst = inst
         self.value = value
+        self._stackn = 1
+    def stack(self, n=None):
+        if n is None:
+            return self._stackn
+        assert isinstance(self, BCProcCall)
+        assert n == -1
+        assert self._stackn == 1
+        self._stackn -= 1
     def __repr__(self): assert False
     def fmt(self): assert False
 
@@ -141,7 +150,8 @@ class BCProcCall(BCValue):
         return 'BCProcCall(%s)' % (self.value,)
     def fmt(self):
         cmd = ' '.join([arg.fmt() for arg in self.value])
-        cmd = '[' + cmd + ']'
+        if self._stackn == 1:
+            cmd = '[' + cmd + ']'
         return cmd
 
 ####################################################################
@@ -155,17 +165,6 @@ class BCNonValue(object):
         self.value = value
     def __repr__(self): assert False
     def fmt(self): assert False
-
-# Represents ignored return values from proc calls
-class BCIgnoredProcCall(BCNonValue):
-    def __init__(self, *args, **kwargs):
-        super(BCIgnoredProcCall, self).__init__(*args, **kwargs)
-        assert len(self.value) == 1
-        assert isinstance(self.value[0], BCProcCall)
-    def __repr__(self):
-        return 'BCIgnoredProcCall(%s)' % (self.value,)
-    def fmt(self):
-        return self.value[0].fmt()[1:-1]
 
 class BCJump(BCNonValue):
     def __init__(self, on, *args, **kwargs):
@@ -303,6 +302,7 @@ def _inst_reductions():
     """
     def N(n): return lambda _: n
     firstop = lambda inst: inst.ops[0][1]
+    def destack(v): v.stack(-1); return v
     inst_reductions = {
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
@@ -312,7 +312,7 @@ def _inst_reductions():
         'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
         'nop': {'nargs': N(0), 'redfn': lambda _1, _2: []},
-        'pop': {'nargs': N(1), 'redfn': BCIgnoredProcCall, 'checktype': BCProcCall},
+        'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0])},
         'startCommand': {'nargs': N(0), 'redfn': lambda _1, _2: []},
         'storeStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), kv[0], kv[1]])},
     }
@@ -340,12 +340,11 @@ def _bblock_reduce(bblock, literals):
             elif inst.name in INST_REDUCTIONS:
                 IRED = INST_REDUCTIONS[inst.name]
                 nargs = IRED['nargs'](inst)
-                checktype = IRED.get('checktype', BCValue)
                 redfn = IRED['redfn']
 
                 arglist = bblock.insts[i-nargs:i]
                 if len(arglist) != nargs: continue
-                if not all([isinstance(arg, checktype) for arg in arglist]):
+                if not all([isinstance(arg, BCValue) for arg in arglist]):
                     continue
                 newinsts = redfn(inst, arglist)
                 if type(newinsts) is not list:
