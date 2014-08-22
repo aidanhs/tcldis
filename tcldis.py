@@ -48,8 +48,9 @@ class Inst(object):
 
 # The below three represent my interpretation of the Tcl stack
 class BCValue(object):
-    def __init__(self, value, *args, **kwargs):
+    def __init__(self, inst, value, *args, **kwargs):
         super(BCValue, self).__init__(*args, **kwargs)
+        self.inst = inst
         self.value = value
     def __repr__(self): assert False
     def fmt(self, *args, **kwargs): assert False
@@ -91,8 +92,9 @@ class BCProcCall(BCValue):
         return cmd
 
 class BCNonValue(object):
-    def __init__(self, value, *args, **kwargs):
+    def __init__(self, inst, value, *args, **kwargs):
         super(BCNonValue, self).__init__(*args, **kwargs)
+        self.inst = inst
         self.value = value
     def __repr__(self): assert False
     def fmt(self, *args, **kwargs): assert False
@@ -175,9 +177,9 @@ def _inst_reductions():
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
         'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
-        'nop': {'nargs': N(0), 'redfn': lambda _: []},
+        'nop': {'nargs': N(0), 'redfn': lambda _1, _2: []},
         'pop': {'nargs': N(1), 'redfn': BCIgnoredProcCall, 'checktype': BCProcCall},
-        'storeStk': {'nargs': N(2), 'redfn': lambda kv: BCProcCall([BCLiteral('set'), kv[0], kv[1]])},
+        'storeStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), kv[0], kv[1]])},
     }
     return inst_reductions
 
@@ -191,7 +193,7 @@ def _bblock_reduce(bblock, literals):
         for i, inst in enumerate(bblock.insts[:]):
             if not isinstance(inst, Inst): continue
             if inst.name in ('push1', 'push4'):
-                bblock.insts[i] = BCLiteral(literals[inst.ops[0][1]])
+                bblock.insts[i] = BCLiteral(inst, literals[inst.ops[0][1]])
                 loopchange = True
                 break
 
@@ -203,9 +205,9 @@ def _bblock_reduce(bblock, literals):
 
                 arglist = bblock.insts[i-nargs:i]
                 if len(arglist) != nargs: continue
-                if not all([isinstance(inst, checktype) for inst in arglist]):
+                if not all([isinstance(arg, checktype) for arg in arglist]):
                     continue
-                newinsts = redfn(arglist)
+                newinsts = redfn(inst, arglist)
                 if type(newinsts) is not list:
                     newinsts = [newinsts]
                 bblock.insts[i-nargs:i+1] = newinsts
