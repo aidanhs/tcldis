@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import struct
+import copy
 
 import _tcldis
 printbc = _tcldis.printbc
@@ -317,11 +318,23 @@ def _inst_reductions():
     firstop = lambda inst: inst.ops[0][1]
     def destack(v): v.stack(-1); return v
     def can_destack(arglist):
-        return all([isinstance(arg, BCProcCall) or isinstance(arg, BCIf) for arg in arglist])
+        return all([
+            isinstance(arg, BCProcCall) or isinstance(arg, BCIf)
+            for arg in arglist
+        ])
+    def is_simple(arglist):
+        return all([
+            any([
+                isinstance(arg, bctype)
+                for bctype in [BCLiteral, BCVarRef, BCArrayRef]
+            ])
+            for arg in arglist
+        ])
     inst_reductions = {
         # Callers
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
+        'listLength': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'llength'), kv[0]])},
         # Jumps
         'jump1': {'nargs': N(0), 'redfn': lambda i, v: BCJump(None, i, v)},
         'jumpFalse1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(False, i, v)},
@@ -335,6 +348,8 @@ def _inst_reductions():
         # Value ignoring
         'done': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
         'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
+        # Misc
+        'dup': {'nargs': N(1), 'redfn': lambda i, v: [v[0], copy.copy(v[0])], 'checkfn': is_simple},
         # Useless
         'nop': {'nargs': N(0), 'redfn': lambda _1, _2: []},
         'startCommand': {'nargs': N(0), 'redfn': lambda _1, _2: []},
