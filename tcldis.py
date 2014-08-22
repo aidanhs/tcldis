@@ -41,6 +41,8 @@ class Inst(object):
             optype = OPERANDS[opnum]
             self.ops.append((optype[0], optype[1](bytecode)))
         self.loc = loc
+        # Note that this doesn't get printed on str() so we only see
+        # the value when it gets reduced to a BCJump class
         if self.name in JUMP_INSTRUCTIONS:
             self.targetloc = self.loc + self.ops[0][1]
 
@@ -182,6 +184,16 @@ def _bblock_create(insts):
         assert bblocks_insts[0].loc == end
         bbinsts.append(bblocks_insts.pop(0))
         bblocks.append(BBlock(bbinsts, bbinsts[0].loc))
+    # Jump fixup
+    for inst in insts:
+        if inst.name not in JUMP_INSTRUCTIONS:
+            continue
+        for bblock in bblocks:
+            if inst.targetloc == bblock.loc:
+                inst.targetloc = bblock
+                break
+        else:
+            assert False
     return bblocks
 
 def _inst_reductions():
