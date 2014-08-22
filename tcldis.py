@@ -308,6 +308,7 @@ def _inst_reductions():
     firstop = lambda inst: inst.ops[0][1]
     def destack(v): v.stack(-1); return v
     inst_reductions = {
+        'done': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0])},
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
         'jump1': {'nargs': N(0), 'redfn': lambda i, v: BCJump(None, i, v)},
