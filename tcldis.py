@@ -302,7 +302,6 @@ def decompile(tcl_code):
     insts = getinsts(bytecode)
     bblocks = _bblock_create(insts)
     # Reduce bblock logic
-    while any([_bblock_reduce(bblock, literals) for bblock in bblocks]):
-        pass
+    [_bblock_reduce(bblock, literals) for bblock in bblocks]
     [_bblock_format(bblock) for bblock in bblocks]
     return [bblock.insts for bblock in bblocks]
