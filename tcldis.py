@@ -366,6 +366,8 @@ def _bblock_flow(bblocks):
     # [if] -> [ifcode]  [elsecode] -> [end]
     #   |---------|----------^          ^        <- conditional jump to else
     #             |---------------------|        <- unconditional jump to end
+    # We only care about the end block for checking that everything does end up
+    # there. The other three blocks end up 'consumed' by a BBFlowIf object.
     loopchange = True
     while loopchange:
         loopchange = False
@@ -386,12 +388,10 @@ def _bblock_flow(bblocks):
             ]
             if targets.count(bblocks[i+1]) > 0: continue
             if targets.count(bblocks[i+2]) > 1: continue
-            if targets.count(bblocks[i+3]) > 1: continue
             jumps = [bblocks[i+0].insts.pop(), bblocks[i+1].insts.pop()]
             assert jumps == [jump0, jump1]
             bblocks[i].insts.append(BBFlowIf(jumps, bblocks[i+1:i+3]))
-            bblocks[i].insts.extend(bblocks[i+3].insts)
-            bblocks[i+1:i+4] = []
+            bblocks[i+1:i+3] = []
             loopchange = True
             break
 
