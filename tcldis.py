@@ -303,4 +303,9 @@ def decompile(tcl_code):
     # Reduce bblock logic
     [_bblock_reduce(bblock, literals) for bblock in bblocks]
     [_bblock_format(bblock) for bblock in bblocks]
-    return [bblock.insts for bblock in bblocks]
+    outstr = ''
+    for bblock in bblocks:
+        for inst in bblock.insts:
+            outstr += str(inst)
+            outstr += '\n'
+    return outstr
