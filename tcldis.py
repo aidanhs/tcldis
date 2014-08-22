@@ -307,8 +307,10 @@ def _inst_reductions():
     def N(n): return lambda _: n
     firstop = lambda inst: inst.ops[0][1]
     def destack(v): v.stack(-1); return v
+    def can_destack(arglist):
+        return all([isinstance(arg, BCProcCall) or isinstance(arg, BCIf) for arg in arglist])
     inst_reductions = {
-        'done': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0])},
+        'done': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
         'jump1': {'nargs': N(0), 'redfn': lambda i, v: BCJump(None, i, v)},
@@ -317,10 +319,13 @@ def _inst_reductions():
         'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
         'nop': {'nargs': N(0), 'redfn': lambda _1, _2: []},
-        'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0])},
+        'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
         'startCommand': {'nargs': N(0), 'redfn': lambda _1, _2: []},
         'storeStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), kv[0], kv[1]])},
     }
+    for details in inst_reductions.values():
+        if 'checkfn' not in details:
+            details['checkfn'] = lambda arglist: all([isinstance(arg, BCValue) for arg in arglist])
     return inst_reductions
 
 INST_REDUCTIONS = _inst_reductions()
@@ -346,11 +351,11 @@ def _bblock_reduce(bblock, literals):
                 IRED = INST_REDUCTIONS[inst.name]
                 nargs = IRED['nargs'](inst)
                 redfn = IRED['redfn']
+                checkfn = IRED['checkfn']
 
                 arglist = bblock.insts[i-nargs:i]
                 if len(arglist) != nargs: continue
-                if not all([isinstance(arg, BCValue) for arg in arglist]):
-                    continue
+                if not checkfn(arglist): continue
                 newinsts = redfn(inst, arglist)
                 if type(newinsts) is not list:
                     newinsts = [newinsts]
