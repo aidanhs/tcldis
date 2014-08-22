@@ -269,6 +269,7 @@ def _inst_reductions():
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
         'nop': {'nargs': N(0), 'redfn': lambda _1, _2: []},
         'pop': {'nargs': N(1), 'redfn': BCIgnoredProcCall, 'checktype': BCProcCall},
+        'startCommand': {'nargs': N(0), 'redfn': lambda _1, _2: []},
         'storeStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), kv[0], kv[1]])},
     }
     return inst_reductions
