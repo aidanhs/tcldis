@@ -78,7 +78,43 @@ class BCLiteral(BCValue):
     def __repr__(self):
         return 'BCLiteral(%s)' % (repr(self.value),)
     def fmt(self):
-        return self.value
+        val = self.value
+        if val == '': return '""'
+        if not any([c in val for c in '[]{}""\f\r\n\t\v ']):
+            return val
+
+        # Can't use simple case, go the hard route
+        matching_brackets = True
+        bracket_level = 0
+        for c in val:
+            if c == '{': bracket_level += 1
+            elif c == '}': bracket_level -= 1
+            if bracket_level < 0:
+                matching_brackets = False
+                break
+        # If we need escape codes we have to use ""
+        # Note we don't try and match \n or \t - these are probably used
+        # in multiline strings, so if possible use {} quoting and print
+        # them literally.
+        if any([c in val for c in '\f\r\v']) or not matching_brackets:
+            val = (val
+                .replace('\\', '\\\\')
+                .replace('\f', '\\f')
+                .replace('\r', '\\r')
+                .replace('\n', '\\n')
+                .replace('\t', '\\t')
+                .replace('\v', '\\v')
+                .replace('}', '\\}')
+                .replace('{', '\\{')
+                .replace('"', '\\"')
+                .replace('"', '\\"')
+                .replace('[', '\\[')
+                .replace(']', '\\]')
+            )
+            val = '"' + val + '"'
+        else:
+            val = '{' + val + '}'
+        return val
 
 class BCVarRef(BCValue):
     def __init__(self, *args, **kwargs):
@@ -138,7 +174,10 @@ class BCJump(BCNonValue):
         self.on = on
         self.targetloc = self.inst.targetloc
     def __repr__(self):
-        return 'BCJump(%s==%s)->%s' % (self.on, self.value, self.inst.targetloc)
+        condition = ''
+        if self.on is not None:
+            condition = '(%s==%s)' % (self.on, self.value)
+        return 'BCJump%s->%s' % (condition, self.inst.targetloc)
     def fmt(self):
         #return 'JUMP%s(%s)' % (self.on, self.value[0].fmt())
         return str(self)
@@ -159,7 +198,7 @@ class BBlock(object):
         return '\n'.join([
             inst.fmt() if not isinstance(inst, Inst) else str(inst)
             for inst in self.insts
-        ]) + '\n'
+        ])
 
 class BBFlow(object):
     def __init__(self, bblocks,  *args, **kwargs):
@@ -182,10 +221,10 @@ class BBFlowIf(BBFlow):
         if self.jumps[0].on is True:
             conditionstr = '!' + conditionstr
         return (
-            'if {%s} {\n' +
-            self.bblocks[0].fmt() +
-            '} else {\n' +
-            self.bblocks[1].fmt() +
+            'if {%s} {' +
+            '\n\t' + self.bblocks[0].fmt().replace('\n', '\n\t') + '\n' +
+            '} else {' +
+            '\n\t' + self.bblocks[1].fmt().replace('\n', '\n\t') + '\n' +
             '}'
         ) % (conditionstr,)
 
@@ -369,4 +408,5 @@ def decompile(tcl_code):
     outstr = ''
     for bblock in bblocks:
         outstr += bblock.fmt()
+        outstr += '\n'
     return outstr
