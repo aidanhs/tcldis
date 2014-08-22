@@ -3,6 +3,7 @@ from __future__ import print_function
 import struct
 
 import _tcldis
+# TODO: how do I docstring these in C?
 printbc = _tcldis.printbc
 getbc = _tcldis.getbc
 
@@ -12,6 +13,10 @@ JUMP_INSTRUCTIONS = (
 )
 
 def getop(numbytes, optype):
+    """
+    Given a C struct descriptor, return a function which will take the necessary
+    bytes off the front of a bytearray and return the python value.
+    """
     def getop_lambda(bc):
         opbytes = ''.join([chr(bc.pop(0)) for i in range(numbytes)])
         return struct.unpack(optype, opbytes)[0]
@@ -53,6 +58,10 @@ class Inst(object):
             self.ops
         )
 
+#################################################################
+# My own representation of anything that can be used as a value #
+#################################################################
+
 # The below three represent my interpretation of the Tcl stack
 class BCValue(object):
     def __init__(self, inst, value, *args, **kwargs):
@@ -60,7 +69,7 @@ class BCValue(object):
         self.inst = inst
         self.value = value
     def __repr__(self): assert False
-    def fmt(self, *args, **kwargs): assert False
+    def fmt(self): assert False
 
 class BCLiteral(BCValue):
     def __init__(self, *args, **kwargs):
@@ -98,13 +107,17 @@ class BCProcCall(BCValue):
         cmd = '[' + cmd + ']'
         return cmd
 
+####################################################################
+# My own representation of anything that cannot be used as a value #
+####################################################################
+
 class BCNonValue(object):
     def __init__(self, inst, value, *args, **kwargs):
         super(BCNonValue, self).__init__(*args, **kwargs)
         self.inst = inst
         self.value = value
     def __repr__(self): assert False
-    def fmt(self, *args, **kwargs): assert False
+    def fmt(self): assert False
 
 # Represents ignored return values from proc calls
 class BCIgnoredProcCall(BCNonValue):
@@ -114,7 +127,7 @@ class BCIgnoredProcCall(BCNonValue):
         assert isinstance(self.value[0], BCProcCall)
     def __repr__(self):
         return 'BCIgnoredProcCall(%s)' % (self.value,)
-    def fmt(self, *args, **kwargs):
+    def fmt(self):
         return self.value[0].fmt()[1:-1]
 
 class BCJump(BCNonValue):
@@ -125,9 +138,13 @@ class BCJump(BCNonValue):
         self.targetloc = self.inst.targetloc
     def __repr__(self):
         return 'BCJump(%s==%s)->%s' % (self.on, self.value, self.inst.targetloc)
-    def fmt(self, *args, **kwargs):
+    def fmt(self):
         #return 'JUMP%s(%s)' % (self.on, self.value[0].fmt())
         return str(self)
+
+##############################
+# Any basic block structures #
+##############################
 
 # Basic block, containing a linear flow of logic
 class BBlock(object):
@@ -138,7 +155,20 @@ class BBlock(object):
     def __repr__(self):
         return 'BBlock(at %s, %s insts)' % (self.loc, len(self.insts))
 
+class BBFlow(object):
+    def __init__(self,  *args, **kwargs):
+        super(BBFlow, self).__init__(*args, **kwargs)
+    def __repr__(self): assert False
+    def fmt(self): assert False
+
+########################
+# Functions start here #
+########################
+
 def getinsts(bytecode):
+    """
+    Given bytecode in a bytearray, return a list of Inst objects.
+    """
     bytecode = bytecode[:]
     insts = []
     pc = 0
@@ -150,6 +180,9 @@ def getinsts(bytecode):
     return insts
 
 def _bblock_create(insts):
+    """
+    Given a list of Inst objects, split them up into basic blocks.
+    """
     # Identify the beginnings and ends of all basic blocks
     starts = set()
     ends = set()
@@ -197,6 +230,10 @@ def _bblock_create(insts):
     return bblocks
 
 def _inst_reductions():
+    """
+    Define how each instruction is reduced to one of my higher level
+    representations.
+    """
     def N(n): return lambda _: n
     firstop = lambda inst: inst.ops[0][1]
     inst_reductions = {
@@ -215,6 +252,10 @@ def _inst_reductions():
 INST_REDUCTIONS = _inst_reductions()
 
 def _bblock_reduce(bblock, literals):
+    """
+    For the given basic block, attempt to reduce all instructions to my higher
+    level representations.
+    """
     change = False
     loopchange = True
     while loopchange:
@@ -244,12 +285,18 @@ def _bblock_reduce(bblock, literals):
                 break
 
 def _bblock_format(bblock):
+    """
+    Return the details of the basic block.
+    """
     bblock.insts = [
         inst.fmt() if not isinstance(inst, Inst) else inst
         for inst in bblock.insts
     ]
 
 def decompile(tcl_code):
+    """
+    Given some tcl code, compile it to bytecode then attempt to decompile it.
+    """
     bytecode, literals = getbc(tcl_code)
     insts = getinsts(bytecode)
     bblocks = _bblock_create(insts)
