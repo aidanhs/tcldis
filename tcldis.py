@@ -382,16 +382,35 @@ def _bblock_flow(bblocks):
             if jump2 is not None: continue
             if jump0.targetloc is not bblocks[i+2]: continue
             if jump1.targetloc is not bblocks[i+3]: continue
-            targets = [
+            targets = [target for target in [
                 (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
                 for src_bblock in bblocks
-            ]
+            ] if target is not None]
             if targets.count(bblocks[i+1]) > 0: continue
             if targets.count(bblocks[i+2]) > 1: continue
             jumps = [bblocks[i+0].insts.pop(), bblocks[i+1].insts.pop()]
             assert jumps == [jump0, jump1]
             bblocks[i].insts.append(BBFlowIf(jumps, bblocks[i+1:i+3]))
             bblocks[i+1:i+3] = []
+            loopchange = True
+            break
+
+def _bblock_join(bblocks):
+    loopchange = True
+    while loopchange:
+        loopchange = False
+        for i in range(len(bblocks)):
+            if len(bblocks[i:i+2]) < 2:
+                continue
+            bblock1, bblock2 = bblocks[i:i+2]
+            targets = [target for target in [
+                (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
+                for src_bblock in bblocks
+            ] if target is not None]
+            if bblock1 in targets or bblock2 in targets:
+                continue
+            bblock1.insts.extend(bblock2.insts)
+            bblocks[i+1:i+2] = []
             loopchange = True
             break
 
@@ -405,6 +424,7 @@ def decompile(tcl_code):
     # Reduce bblock logic
     [_bblock_reduce(bblock, literals) for bblock in bblocks]
     _bblock_flow(bblocks)
+    _bblock_join(bblocks)
     outstr = ''
     for bblock in bblocks:
         outstr += bblock.fmt()
