@@ -325,9 +325,11 @@ def _bblock_reduce(bblock, literals):
     For the given basic block, attempt to reduce all instructions to my higher
     level representations.
     """
+    change = False
     loopchange = True
     while loopchange:
         loopchange = False
+
         for i, inst in enumerate(bblock.insts[:]):
             if not isinstance(inst, Inst): continue
             if inst.name in ('push1', 'push4'):
@@ -352,6 +354,11 @@ def _bblock_reduce(bblock, literals):
                 loopchange = True
                 break
 
+        if loopchange:
+            change = True
+
+    return change
+
 def _get_jump(bblock):
     jump = bblock.insts[-1]
     return jump if isinstance(jump, BCJump) else None
@@ -368,9 +375,11 @@ def _bblock_flow(bblocks):
     #             |---------------------|        <- unconditional jump to end
     # We only care about the end block for checking that everything does end up
     # there. The other three blocks end up 'consumed' by a BBFlowIf object.
+    change = False
     loopchange = True
     while loopchange:
         loopchange = False
+
         for i in range(len(bblocks)):
             if len(bblocks[i:i+4]) < 4:
                 continue
@@ -395,10 +404,17 @@ def _bblock_flow(bblocks):
             loopchange = True
             break
 
+        if loopchange:
+            change = True
+
+    return change
+
 def _bblock_join(bblocks):
+    change = False
     loopchange = True
     while loopchange:
         loopchange = False
+
         for i in range(len(bblocks)):
             if len(bblocks[i:i+2]) < 2:
                 continue
@@ -414,6 +430,11 @@ def _bblock_join(bblocks):
             loopchange = True
             break
 
+        if loopchange:
+            change = True
+
+    return change
+
 def decompile(tcl_code):
     """
     Given some tcl code, compile it to bytecode then attempt to decompile it.
@@ -422,9 +443,12 @@ def decompile(tcl_code):
     insts = getinsts(bytecode)
     bblocks = _bblock_create(insts)
     # Reduce bblock logic
-    [_bblock_reduce(bblock, literals) for bblock in bblocks]
-    _bblock_flow(bblocks)
-    _bblock_join(bblocks)
+    change = True
+    while change:
+        change = False
+        change = any([_bblock_reduce(bblock, literals) for bblock in bblocks])
+        change = change or _bblock_flow(bblocks)
+        change = change or _bblock_join(bblocks)
     outstr = ''
     for bblock in bblocks:
         outstr += bblock.fmt()
