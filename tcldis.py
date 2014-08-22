@@ -134,7 +134,7 @@ class BCIgnoredProcCall(BCNonValue):
 class BCJump(BCNonValue):
     def __init__(self, on, *args, **kwargs):
         super(BCJump, self).__init__(*args, **kwargs)
-        assert len(self.value) == 1
+        assert len(self.value) == 0 if on is None else 1
         self.on = on
         self.targetloc = self.inst.targetloc
     def __repr__(self):
@@ -162,10 +162,27 @@ class BBlock(object):
         ]) + '\n'
 
 class BBFlow(object):
-    def __init__(self,  *args, **kwargs):
+    def __init__(self, bblocks,  *args, **kwargs):
         super(BBFlow, self).__init__(*args, **kwargs)
+        self.bblocks = bblocks
     def __repr__(self): assert False
     def fmt(self): assert False
+
+class BBFlowIf(BBFlow):
+    def __init__(self, condition, *args, **kwargs):
+        super(BBFlowIf, self).__init__(*args, **kwargs)
+        assert len(self.bblocks) == 1
+        assert isinstance(condition, BCJump)
+        self.condition = condition
+    def __repr__(self):
+        return 'BBFlowIf(%s)' % (self.bblocks,)
+    def fmt(self):
+        conditionstr = self.condition.value[0].fmt()
+        if self.condition.on is True:
+            conditionstr = '!' + conditionstr
+        return (
+            'if {%s} {\n' + self.bblocks[0].fmt() + '}'
+        ) % (conditionstr,)
 
 ########################
 # Functions start here #
@@ -245,6 +262,7 @@ def _inst_reductions():
     inst_reductions = {
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
+        'jump1': {'nargs': N(0), 'redfn': lambda i, v: BCJump(None, i, v)},
         'jumpFalse1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(False, i, v)},
         'jumpTrue1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(True, i, v)},
         'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
@@ -289,6 +307,39 @@ def _bblock_reduce(bblock, literals):
                 loopchange = True
                 break
 
+def _get_jump(bblock):
+    jump = bblock.insts[-1]
+    return jump if isinstance(jump, BCJump) else None
+
+def _bblock_flow(bblocks):
+    # Recognise a basic if
+    loopchange = True
+    while loopchange:
+        loopchange = False
+        for i, bblock in enumerate(bblocks):
+            jump = _get_jump(bblock)
+            if jump is None or jump.on is None:
+                continue
+            if len(bblocks[i:]) < 3:
+                continue
+            if _get_jump(bblocks[i+1]) is not None:
+                continue
+            if jump.targetloc is not bblocks[i+2]:
+                continue
+            targets = [
+                (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
+                for src_bblock in bblocks
+            ]
+            if bblocks[i+1] in targets:
+                continue
+            if targets.count(bblocks[i+2]) > 1:
+                continue
+            initialcondition = bblocks[i].insts.pop()
+            bblocks[i].insts.append(BBFlowIf(initialcondition, bblocks[i+1:i+2]))
+            bblocks[i].insts.extend(bblocks[i+2].insts)
+            bblocks[i+1:i+3] = []
+            loopchange = True
+            break
 
 def decompile(tcl_code):
     """
@@ -299,6 +350,7 @@ def decompile(tcl_code):
     bblocks = _bblock_create(insts)
     # Reduce bblock logic
     [_bblock_reduce(bblock, literals) for bblock in bblocks]
+    _bblock_flow(bblocks)
     outstr = ''
     for bblock in bblocks:
         outstr += bblock.fmt()
