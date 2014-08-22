@@ -400,6 +400,11 @@ def _bblock_flow(bblocks):
             if jump2 is not None: continue
             if jump0.targetloc is not bblocks[i+2]: continue
             if jump1.targetloc is not bblocks[i+3]: continue
+            if any([
+                    isinstance(inst, Inst) for inst in
+                    bblocks[i+1].insts + bblocks[i+2].insts
+                    ]):
+                continue
             targets = [target for target in [
                 (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
                 for src_bblock in bblocks
