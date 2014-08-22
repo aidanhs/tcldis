@@ -143,6 +143,15 @@ class BCArrayRef(BCValue):
     def fmt(self):
         return '$' + self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
 
+class BCArrayElt(BCValue):
+    def __init__(self, *args, **kwargs):
+        super(BCArrayElt, self).__init__(*args, **kwargs)
+        assert len(self.value) == 2
+    def __repr__(self):
+        return 'BCArrayElt(%s)' % (repr(self.value),)
+    def fmt(self):
+        return self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
+
 class BCProcCall(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCProcCall, self).__init__(*args, **kwargs)
@@ -322,6 +331,7 @@ def _inst_reductions():
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
         # Variable sets
         'storeStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), kv[0], kv[1]])},
+        'storeArrayStk': {'nargs': N(3), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), BCArrayElt(None, kv[:2]), kv[2]])},
         # Value ignoring
         'done': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
         'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
