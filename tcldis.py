@@ -310,18 +310,24 @@ def _inst_reductions():
     def can_destack(arglist):
         return all([isinstance(arg, BCProcCall) or isinstance(arg, BCIf) for arg in arglist])
     inst_reductions = {
-        'done': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
+        # Callers
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
+        # Jumps
         'jump1': {'nargs': N(0), 'redfn': lambda i, v: BCJump(None, i, v)},
         'jumpFalse1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(False, i, v)},
         'jumpTrue1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(True, i, v)},
+        # Variable references
         'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
-        'nop': {'nargs': N(0), 'redfn': lambda _1, _2: []},
-        'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
-        'startCommand': {'nargs': N(0), 'redfn': lambda _1, _2: []},
+        # Variable sets
         'storeStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), kv[0], kv[1]])},
+        # Value ignoring
+        'done': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
+        'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
+        # Useless
+        'nop': {'nargs': N(0), 'redfn': lambda _1, _2: []},
+        'startCommand': {'nargs': N(0), 'redfn': lambda _1, _2: []},
     }
     for details in inst_reductions.values():
         if 'checkfn' not in details:
