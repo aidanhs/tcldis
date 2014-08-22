@@ -12,12 +12,14 @@ JUMP_INSTRUCTIONS = (
     'jump1', 'jump4', 'jumpTrue1', 'jumpTrue4', 'jumpFalse1', 'jumpFalse4'
 )
 
-def getop(numbytes, optype):
+def _getop(optype):
     """
     Given a C struct descriptor, return a function which will take the necessary
     bytes off the front of a bytearray and return the python value.
     """
     def getop_lambda(bc):
+        # The 'standard' sizes in the struct module match up to what Tcl expects
+        numbytes = struct.calcsize(optype)
         opbytes = ''.join([chr(bc.pop(0)) for i in range(numbytes)])
         return struct.unpack(optype, opbytes)[0]
     return getop_lambda
@@ -25,14 +27,14 @@ def getop(numbytes, optype):
 # InstOperandType from tclCompile.h
 OPERANDS = [
     ('NONE',  None), # Should never be present
-    ('INT1',  getop(1,'>b')),
-    ('INT4',  getop(4,'>i')),
-    ('UINT1', getop(1,'>B')),
-    ('UINT4', getop(4,'>I')),
-    ('IDX4',  getop(4,'>i')),
-    ('LVT1',  getop(1,'>B')),
-    ('LVT4',  getop(4,'>I')),
-    ('AUX4',  getop(4,'>I')),
+    ('INT1',  _getop('>b')),
+    ('INT4',  _getop('>i')),
+    ('UINT1', _getop('>B')),
+    ('UINT4', _getop('>I')),
+    ('IDX4',  _getop('>i')),
+    ('LVT1',  _getop('>B')),
+    ('LVT4',  _getop('>I')),
+    ('AUX4',  _getop('>I')),
 ]
 
 # Tcl bytecode instruction
