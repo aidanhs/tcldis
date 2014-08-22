@@ -169,19 +169,24 @@ class BBFlow(object):
     def fmt(self): assert False
 
 class BBFlowIf(BBFlow):
-    def __init__(self, condition, *args, **kwargs):
+    def __init__(self, jumps, *args, **kwargs):
         super(BBFlowIf, self).__init__(*args, **kwargs)
-        assert len(self.bblocks) == 1
-        assert isinstance(condition, BCJump)
-        self.condition = condition
+        assert len(self.bblocks) == 2
+        assert all([isinstance(jump, BCJump) for jump in jumps])
+        assert jumps[0].on in (True, False) and jumps[1].on is None
+        self.jumps = jumps
     def __repr__(self):
         return 'BBFlowIf(%s)' % (self.bblocks,)
     def fmt(self):
-        conditionstr = self.condition.value[0].fmt()
-        if self.condition.on is True:
+        conditionstr = self.jumps[0].value[0].fmt()
+        if self.jumps[0].on is True:
             conditionstr = '!' + conditionstr
         return (
-            'if {%s} {\n' + self.bblocks[0].fmt() + '}'
+            'if {%s} {\n' +
+            self.bblocks[0].fmt() +
+            '} else {\n' +
+            self.bblocks[1].fmt() +
+            '}'
         ) % (conditionstr,)
 
 ########################
@@ -313,32 +318,41 @@ def _get_jump(bblock):
     return jump if isinstance(jump, BCJump) else None
 
 def _bblock_flow(bblocks):
-    # Recognise a basic if
+    # Recognise a basic if.
+    # Observe that we don't try and recognise a basic if with no else branch -
+    # it turns out that tcl implicitly inserts the else to provide all
+    # execution branches with a value. TODO: this is an implementation detail
+    # and should be handled more generically.
+    # The overall structure consists of 4 basic blocks, arranged like so:
+    # [if] -> [ifcode]  [elsecode] -> [end]
+    #   |---------|----------^          ^        <- conditional jump to else
+    #             |---------------------|        <- unconditional jump to end
     loopchange = True
     while loopchange:
         loopchange = False
-        for i, bblock in enumerate(bblocks):
-            jump = _get_jump(bblock)
-            if jump is None or jump.on is None:
+        for i in range(len(bblocks)):
+            if len(bblocks[i:i+4]) < 4:
                 continue
-            if len(bblocks[i:]) < 3:
-                continue
-            if _get_jump(bblocks[i+1]) is not None:
-                continue
-            if jump.targetloc is not bblocks[i+2]:
-                continue
+            jump0 = _get_jump(bblocks[i+0])
+            jump1 = _get_jump(bblocks[i+1])
+            jump2 = _get_jump(bblocks[i+2])
+            if jump0 is None or jump0.on is None: continue
+            if jump1 is None or jump1.on is not None: continue
+            if jump2 is not None: continue
+            if jump0.targetloc is not bblocks[i+2]: continue
+            if jump1.targetloc is not bblocks[i+3]: continue
             targets = [
                 (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
                 for src_bblock in bblocks
             ]
-            if bblocks[i+1] in targets:
-                continue
-            if targets.count(bblocks[i+2]) > 1:
-                continue
-            initialcondition = bblocks[i].insts.pop()
-            bblocks[i].insts.append(BBFlowIf(initialcondition, bblocks[i+1:i+2]))
-            bblocks[i].insts.extend(bblocks[i+2].insts)
-            bblocks[i+1:i+3] = []
+            if targets.count(bblocks[i+1]) > 0: continue
+            if targets.count(bblocks[i+2]) > 1: continue
+            if targets.count(bblocks[i+3]) > 1: continue
+            jumps = [bblocks[i+0].insts.pop(), bblocks[i+1].insts.pop()]
+            assert jumps == [jump0, jump1]
+            bblocks[i].insts.append(BBFlowIf(jumps, bblocks[i+1:i+3]))
+            bblocks[i].insts.extend(bblocks[i+3].insts)
+            bblocks[i+1:i+4] = []
             loopchange = True
             break
 
