@@ -190,11 +190,14 @@ err:
 
 static PyMethodDef TclDisMethods[] = {
 	{"printbc",  (PyCFunction)tcldis_printbc,
-		METH_VARARGS | METH_KEYWORDS, "print bytecode"},
+		METH_VARARGS | METH_KEYWORDS,
+		"Given some Tcl code, format and print the bytecode."},
 	{"getbc",  (PyCFunction)tcldis_getbc,
-		METH_VARARGS | METH_KEYWORDS, "get bytecode"},
+		METH_VARARGS | METH_KEYWORDS,
+		"Given some Tcl code, get the bytecode as a bytearray."},
 	{"inst_table",  (PyCFunction)tcldis_inst_table,
-		METH_VARARGS | METH_KEYWORDS, "get inst table"},
+		METH_VARARGS | METH_KEYWORDS,
+		"Get the instruction table for Tcl bytecode."},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
 

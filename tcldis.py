@@ -3,7 +3,6 @@ from __future__ import print_function
 import struct
 
 import _tcldis
-# TODO: how do I docstring these in C?
 printbc = _tcldis.printbc
 getbc = _tcldis.getbc
 
