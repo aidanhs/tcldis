@@ -48,4 +48,7 @@ _tcldis.o: src/tcldis.c
 clean:
 	rm -f *.so *.o
 
-.PHONY: clean default
+test: default
+	PYTHONPATH=. python tests/test.py
+
+.PHONY: clean test default
