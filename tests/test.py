@@ -16,6 +16,14 @@ class TestBasicTcl(unittest.TestCase):
         tcl = 'set x(a) 15\n'
         self.assertTclEqual(tcl)
 
+    def test_ref(self):
+        tcl = 'puts $a\n'
+        self.assertTclEqual(tcl)
+
+    def test_ref_array(self):
+        tcl = 'puts $x(a)\n'
+        self.assertTclEqual(tcl)
+
     #def test_if(self):
     #    tcl = dedent(
     #        '''\
