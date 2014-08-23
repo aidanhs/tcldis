@@ -148,15 +148,6 @@ class BCArrayRef(BCValue):
     def fmt(self):
         return '$' + self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
 
-class BCArrayElt(BCValue):
-    def __init__(self, *args, **kwargs):
-        super(BCArrayElt, self).__init__(*args, **kwargs)
-        assert len(self.value) == 2
-    def __repr__(self):
-        return 'BCArrayElt(%s)' % (repr(self.value),)
-    def fmt(self):
-        return self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
-
 class BCProcCall(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCProcCall, self).__init__(*args, **kwargs)
@@ -245,6 +236,16 @@ class BCJump(BCNonValue):
     def fmt(self):
         #return 'JUMP%s(%s)' % (self.on, self.value[0].fmt())
         return str(self)
+
+# Just a formatting container for the form a(x)
+class BCArrayElt(BCNonValue):
+    def __init__(self, *args, **kwargs):
+        super(BCArrayElt, self).__init__(*args, **kwargs)
+        assert len(self.value) == 2
+    def __repr__(self):
+        return 'BCArrayElt(%s)' % (repr(self.value),)
+    def fmt(self):
+        return self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
 
 ##############################
 # Any basic block structures #
