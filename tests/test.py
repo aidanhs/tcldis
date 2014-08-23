@@ -9,20 +9,16 @@ class TestBasicTcl(unittest.TestCase):
         self.assertEqual(tcl, tcldis.decompile(tcl))
 
     def test_set(self):
-        tcl = 'set x 15\n'
-        self.assertTclEqual(tcl)
+        self.assertTclEqual('set x 15\n')
 
     def test_set_array(self):
-        tcl = 'set x(a) 15\n'
-        self.assertTclEqual(tcl)
+        self.assertTclEqual('set x(a) 15\n')
 
     def test_ref(self):
-        tcl = 'puts $a\n'
-        self.assertTclEqual(tcl)
+        self.assertTclEqual('puts $a\n')
 
     def test_ref_array(self):
-        tcl = 'puts $x(a)\n'
-        self.assertTclEqual(tcl)
+        self.assertTclEqual('puts $x(a)\n')
 
     #def test_if(self):
     #    tcl = dedent(
@@ -35,7 +31,7 @@ class TestBasicTcl(unittest.TestCase):
     #    self.assertTclEqual(tcl)
 
     def test_if_else(self):
-        tcl = dedent(
+        self.assertTclEqual(dedent(
             '''\
             if {$a} {
             \tputs a
@@ -43,12 +39,10 @@ class TestBasicTcl(unittest.TestCase):
             \tputs b
             }
             '''
-        )
-        self.assertTclEqual(tcl)
+        ))
 
     def test_array_set(self):
-        tcl = 'array set x {a 1 b 2}\n'
-        self.assertTclEqual(tcl)
+        self.assertTclEqual('array set x {a 1 b 2}\n')
 
     #def test_list(self):
     #    tcl = 'puts [list a b c]'
