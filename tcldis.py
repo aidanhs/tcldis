@@ -503,6 +503,8 @@ def _bblock_join(bblocks):
             if len(bblocks[i:i+2]) < 2:
                 continue
             bblock1, bblock2 = bblocks[i:i+2]
+            if _get_jump(bblock1) is not None:
+                continue
             targets = [target for target in [
                 (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
                 for src_bblock in bblocks
