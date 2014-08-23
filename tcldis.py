@@ -156,10 +156,14 @@ class BCArrayElt(BCValue):
 class BCProcCall(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCProcCall, self).__init__(*args, **kwargs)
+        assert len(self.value) >= 1
     def __repr__(self):
         return 'BCProcCall(%s)' % (self.value,)
     def fmt(self):
-        cmd = ' '.join([arg.fmt() for arg in self.value])
+        args = self.value[:]
+        if args[0].fmt() == '::tcl::array::set':
+            args[0:1] = [BCLiteral(None, 'array'), BCLiteral(None, 'set')]
+        cmd = ' '.join([arg.fmt() for arg in args])
         if self.stack():
             cmd = '[' + cmd + ']'
         return cmd
