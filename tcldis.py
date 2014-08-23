@@ -378,13 +378,31 @@ def _bblock_reduce(bblock, literals):
                 redfn = IRED['redfn']
                 checkfn = IRED['checkfn']
 
-                arglist = bblock.insts[i-nargs:i]
+                arglist = []
+                argis = []
+                for argi, arg in reversed(list(enumerate(bblock.insts[:i]))):
+                    if len(arglist) == nargs:
+                        break
+                    if not isinstance(arg, BCValue):
+                        break
+                    if arg.stack() < 1:
+                        continue
+                    if not checkfn(arg):
+                        break
+                    arglist.append(arg)
+                    argis.append(argi)
+                arglist.reverse()
                 if len(arglist) != nargs: continue
-                if not all([checkfn(arg) for arg in arglist]): continue
                 newinsts = redfn(inst, arglist)
                 if type(newinsts) is not list:
                     newinsts = [newinsts]
-                bblock.insts[i-nargs:i+1] = newinsts
+                bblock.insts[i:i+1] = newinsts
+                # Remove any values we used as arguments.
+                # Must go from biggest index to smallest! This happens
+                # automatically because of the order we append in, but sort to
+                # make it explicit
+                for argi in sorted(argis, reverse=True):
+                    bblock.insts.pop(argi)
                 loopchange = True
                 break
 
