@@ -75,7 +75,11 @@ class BCValue(object):
     def stack(self, n=None):
         if n is None:
             return self._stackn
-        assert isinstance(self, BCProcCall) or isinstance(self, BCIf)
+        try:
+            assert any([isinstance(self, bctype) for bctype in _destackable_bctypes])
+        except AssertionError:
+            print('Unrecognised pop of %s, please report.' % (self,))
+            raise
         assert n == -1
         assert self._stackn == 1
         self._stackn -= 1
@@ -168,6 +172,19 @@ class BCProcCall(BCValue):
             cmd = '[' + cmd + ']'
         return cmd
 
+class BCReturn(BCValue):
+    def __init__(self, *args, **kwargs):
+        super(BCReturn, self).__init__(*args, **kwargs)
+        assert len(self.value) == 2
+        assert self.value[1].value == '' # Options
+        assert self.inst.ops[0][1] == 0 # Code
+        assert self.inst.ops[1][1] == 1 # Level
+    def __repr__(self):
+        return 'BCReturn(%s)' % (repr(self.value),)
+    def fmt(self):
+        if self.value[0].value == '': return 'return'
+        return 'return ' + self.value[0].fmt()
+
 class BCIf(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCIf, self).__init__(*args, **kwargs)
@@ -179,7 +196,7 @@ class BCIf(BCValue):
         for bblock in self.value:
             inst = bblock.insts[-1]
             if isinstance(inst, BCLiteral):
-                assert inst.fmt() == '{}'
+                assert inst.value == ''
                 bblock.insts[-1:] = []
             else:
                 inst.stack(-1)
@@ -199,6 +216,8 @@ class BCIf(BCValue):
         if self.stack():
             cmd = '[' + cmd + ']'
         return cmd
+
+_destackable_bctypes = [BCProcCall, BCIf, BCReturn]
 
 ####################################################################
 # My own representation of anything that cannot be used as a value #
@@ -322,7 +341,10 @@ def _inst_reductions():
     firstop = lambda inst: inst.ops[0][1]
     def destack(v): v.stack(-1); return v
     def can_destack(arg):
-        return isinstance(arg, BCProcCall) or isinstance(arg, BCIf)
+        return any([
+            isinstance(arg, bctype)
+            for bctype in _destackable_bctypes
+        ])
     def is_simple(arg):
         return any([
             isinstance(arg, bctype)
@@ -348,6 +370,7 @@ def _inst_reductions():
         'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
         # Misc
         'dup': {'nargs': N(1), 'redfn': lambda i, v: [v[0], copy.copy(v[0])], 'checkfn': is_simple},
+        'returnImm': {'nargs': N(2), 'redfn': BCReturn},
         # Useless
         'nop': {'nargs': N(0), 'redfn': lambda _1, _2: []},
         'startCommand': {'nargs': N(0), 'redfn': lambda _1, _2: []},
