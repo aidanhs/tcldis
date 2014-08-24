@@ -6,12 +6,16 @@
 static Tcl_Interp *interp;
 static const Tcl_ObjType *tBcType;
 
-static Tcl_Obj *getbc(char* tclCode, Py_ssize_t tclObjPtr) {
-	/*
-	 * Assumed defaults:
-	 * char *tclCode = NULL;
-	 * Py_ssize_t tclObjPtr = 0;
-	 */
+static Tcl_Obj *
+getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+	static char *kwlist[] = {"tcl_code", "tclobj_ptr", NULL};
+	char *tclCode = NULL;
+	Py_ssize_t tclObjPtr = 0;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sn", kwlist,
+			&tclCode, &tclObjPtr))
+		return NULL;
 
 	Tcl_Obj *tObj;
 
@@ -54,15 +58,7 @@ static Tcl_Obj *getbc(char* tclCode, Py_ssize_t tclObjPtr) {
 static PyObject *
 tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	static char *kwlist[] = {"tcl_code", "tclobj_ptr", NULL};
-	char *tclCode = NULL;
-	Py_ssize_t tclObjPtr = 0;
-
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sn", kwlist,
-			&tclCode, &tclObjPtr))
-		return NULL;
-
-	Tcl_Obj *tObj = getbc(tclCode, tclObjPtr);
+	Tcl_Obj *tObj = getBcTclObj(self, args, kwargs);
 	if (tObj == NULL)
 		return NULL;
 
@@ -83,15 +79,7 @@ tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	static char *kwlist[] = {"tcl_code", "tclobj_ptr", NULL};
-	char *tclCode = NULL;
-	Py_ssize_t tclObjPtr = 0;
-
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sn", kwlist,
-			&tclCode, &tclObjPtr))
-		return NULL;
-
-	Tcl_Obj *tObj = getbc(tclCode, tclObjPtr);
+	Tcl_Obj *tObj = getBcTclObj(self, args, kwargs);
 	if (tObj == NULL)
 		return NULL;
 
