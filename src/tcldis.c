@@ -4,6 +4,7 @@
 #include "tcl_bcutil.c"
 
 static Tcl_Interp *interp;
+static const Tcl_ObjType *tBcType;
 
 static PyObject *
 tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -18,12 +19,11 @@ tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	Tcl_IncrRefCount(tObj);
 	Tcl_AppendStringsToObj(tObj, tclCode, NULL);
 
-	const Tcl_ObjType *bct = Tcl_GetObjType("bytecode");
 	/*
 	 * This is unusual - even strings failing parsing return ok (and
 	 * create a bytecode object detailing the error)
 	 */
-	if (Tcl_ConvertToType(interp, tObj, bct) != TCL_OK) {
+	if (Tcl_ConvertToType(interp, tObj, tBcType) != TCL_OK) {
 		PyErr_SetString(PyExc_RuntimeError,
 			"failed to convert to tcl bytecode");
 		return NULL;
@@ -46,24 +46,45 @@ tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	static char *kwlist[] = {"tcl_code", NULL};
-	char *tclCode;
+	static char *kwlist[] = {"tcl_code", "tclobj_ptr", NULL};
+	char *tclCode = NULL;
+	Py_ssize_t tclObjPtr = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist, &tclCode))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sn", kwlist,
+			&tclCode, &tclObjPtr))
 		return NULL;
 
-	Tcl_Obj *tObj = Tcl_NewObj();
-	Tcl_IncrRefCount(tObj);
-	Tcl_AppendStringsToObj(tObj, tclCode, NULL);
+	Tcl_Obj *tObj;
 
-	const Tcl_ObjType *bct = Tcl_GetObjType("bytecode");
-	/*
-	 * This is unusual - even strings failing parsing return ok (and
-	 * create a bytecode object detailing the error)
-	 */
-	if (Tcl_ConvertToType(interp, tObj, bct) != TCL_OK) {
+	if (tclCode != NULL) {
+		tObj = Tcl_NewObj();
+		Tcl_IncrRefCount(tObj);
+		Tcl_AppendStringsToObj(tObj, tclCode, NULL);
+		/*
+		 * This is unusual - even strings failing parsing return ok (and
+		 * create a bytecode object detailing the error)
+		 */
+		if (Tcl_ConvertToType(interp, tObj, tBcType) != TCL_OK) {
+			PyErr_SetString(PyExc_RuntimeError,
+				"failed to convert to tcl bytecode");
+			return NULL;
+		}
+	} else if (tclObjPtr != 0) {
+		/*
+		 * This is pretty dangerous, we get a raw pointer and just take
+		 * it on faith that it points to a Tcl_Obj
+		 */
+		tObj = (Tcl_Obj *)tclObjPtr;
+		/* TODO: are we allowed to access typePtr directly? */
+		if (tObj->typePtr != tBcType) {
+			PyErr_SetString(PyExc_RuntimeError,
+				"pointer doesn't point to Tcl_Obj of bytecode");
+			return NULL;
+		}
+		Tcl_IncrRefCount(tObj);
+	} else {
 		PyErr_SetString(PyExc_RuntimeError,
-			"failed to convert to tcl bytecode");
+			"must pass an argument to obtain bytecode from");
 		return NULL;
 	}
 
@@ -211,6 +232,7 @@ PyMODINIT_FUNC
 init_tcldis(void)
 {
 	interp = Tcl_CreateInterp();
+	tBcType = Tcl_GetObjType("bytecode");
 
 	PyObject *m = Py_InitModule("_tcldis", TclDisMethods);
 	if (m == NULL)
