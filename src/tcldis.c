@@ -54,25 +54,17 @@ static Tcl_Obj *getbc(char* tclCode, Py_ssize_t tclObjPtr) {
 static PyObject *
 tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	static char *kwlist[] = {"tcl_code", NULL};
-	char *tclCode;
+	static char *kwlist[] = {"tcl_code", "tclobj_ptr", NULL};
+	char *tclCode = NULL;
+	Py_ssize_t tclObjPtr = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s", kwlist, &tclCode))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sn", kwlist,
+			&tclCode, &tclObjPtr))
 		return NULL;
 
-	Tcl_Obj *tObj = Tcl_NewObj();
-	Tcl_IncrRefCount(tObj);
-	Tcl_AppendStringsToObj(tObj, tclCode, NULL);
-
-	/*
-	 * This is unusual - even strings failing parsing return ok (and
-	 * create a bytecode object detailing the error)
-	 */
-	if (Tcl_ConvertToType(interp, tObj, tBcType) != TCL_OK) {
-		PyErr_SetString(PyExc_RuntimeError,
-			"failed to convert to tcl bytecode");
+	Tcl_Obj *tObj = getbc(tclCode, tclObjPtr);
+	if (tObj == NULL)
 		return NULL;
-	}
 
 	Tcl_Obj *tStr = TclDisassembleByteCodeObj(tObj);
 	Tcl_IncrRefCount(tStr);
