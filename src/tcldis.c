@@ -67,6 +67,11 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 		return NULL;
 	}
 
+	/*
+	 * In 8.6 this changed to tObj->internalRep.twoPtrValue.ptr1. In practice,
+	 * this has no effect because of the way the structs are arranged. ptr2 is
+	 * currently unused by bytecode tcl objects.
+	 */
 	ByteCode *bc = tObj->internalRep.otherValuePtr;
 
 	PyObject *pTclVars = PyList_New(0);
