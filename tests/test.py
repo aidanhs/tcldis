@@ -20,6 +20,7 @@ class TestBasicTcl(unittest.TestCase):
     def test_ref_array(self):
         self.assertTclEqual('puts $x(a)\n')
 
+    # TODO: ensure compiles to more than just a proc call
     #def test_if(self):
     #    tcl = dedent(
     #        '''\
@@ -30,6 +31,7 @@ class TestBasicTcl(unittest.TestCase):
     #    )
     #    self.assertTclEqual(tcl)
 
+    # TODO: ensure compiles to more than just a proc call
     def test_if_else(self):
         self.assertTclEqual(dedent(
             '''\
@@ -41,12 +43,89 @@ class TestBasicTcl(unittest.TestCase):
             '''
         ))
 
+    # TODO: ensure compiles to more than just a proc call
+    #def test_if_elseif(self):
+    #    self.assertTclEqual(dedent(
+    #        '''\
+    #        if {$a} {
+    #        \tputs a
+    #        } elseif {$b} {
+    #        \tputs b
+    #        }
+    #        '''
+    #    ))
+
+    # TODO: ensure compiles to more than just a proc call
+    #def test_if_elseif_else(self):
+    #    self.assertTclEqual(dedent(
+    #        '''\
+    #        if {$a} {
+    #        \tputs a
+    #        } elseif {$b} {
+    #        \tputs b
+    #        } else {
+    #        \tputs c
+    #        }
+    #        '''
+    #    ))
+
+    # TODO: ensure compiles to more than just a proc call
+    #def test_if_elseif_elseif_else(self):
+    #    self.assertTclEqual(dedent(
+    #        '''\
+    #        if {$a} {
+    #        \tputs a
+    #        } elseif {$b} {
+    #        \tputs b
+    #        } elseif {$c} {
+    #        \tputs c
+    #        } else {
+    #        \tputs d
+    #        }
+    #        '''
+    #    ))
+
+    # TODO: ensure compiles to more than just a proc call
+    #def test_switch(self):
+    #    self.assertTclEqual(dedent(
+    #        '''\
+    #        switch -exact $a {
+    #            pat1 {
+    #                puts my_body_1
+    #            }
+    #            pat2 {
+    #                puts my_body_2
+    #            }
+    #            default {
+    #                puts default
+    #            }
+    #        }
+    #        '''
+    #    ))
+
+    # TODO: ensure compiles to more than just a proc call
+    #def test_for(self):
+    #    self.assertTclEqual(dedent(
+    #        '''\
+    #        for {set i 0} {$i < 5} {incr i} {
+    #            puts $i
+    #        }
+    #        '''
+    #    ))
+
+    # TODO: ensure compiles to more than just a proc call
+    # foreach
+    # TODO: ensure compiles to more than just a proc call
+    # dict for
+
     def test_array_set(self):
         self.assertTclEqual('array set x {a 1 b 2}\n')
 
     #def test_list(self):
-    #    tcl = 'puts [list a b c]'
-    #    self.assertTclEqual(tcl)
+    #    self.assertTclEqual('puts [list a b c]\n')
+
+    def test_return(self):
+        self.assertTclEqual('return 15\n')
 
 if __name__ == '__main__':
     unittest.main()
