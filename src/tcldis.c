@@ -6,6 +6,51 @@
 static Tcl_Interp *interp;
 static const Tcl_ObjType *tBcType;
 
+static Tcl_Obj *getbc(char* tclCode, Py_ssize_t tclObjPtr) {
+	/*
+	 * Assumed defaults:
+	 * char *tclCode = NULL;
+	 * Py_ssize_t tclObjPtr = 0;
+	 */
+
+	Tcl_Obj *tObj;
+
+	if (tclCode != NULL) {
+		tObj = Tcl_NewObj();
+		Tcl_IncrRefCount(tObj);
+		Tcl_AppendStringsToObj(tObj, tclCode, NULL);
+		/*
+		 * This is unusual - even strings failing parsing return ok (and
+		 * create a bytecode object detailing the error)
+		 */
+		if (Tcl_ConvertToType(interp, tObj, tBcType) != TCL_OK) {
+			Tcl_DecrRefCount(tObj);
+			PyErr_SetString(PyExc_RuntimeError,
+				"failed to convert to tcl bytecode");
+			return NULL;
+		}
+	} else if (tclObjPtr != 0) {
+		/*
+		 * This is pretty dangerous, we get a raw pointer and just take
+		 * it on faith that it points to a Tcl_Obj
+		 */
+		tObj = (Tcl_Obj *)tclObjPtr;
+		/* TODO: are we allowed to access typePtr directly? */
+		if (tObj->typePtr != tBcType) {
+			PyErr_SetString(PyExc_RuntimeError,
+				"pointer doesn't point to Tcl_Obj of bytecode");
+			return NULL;
+		}
+		Tcl_IncrRefCount(tObj);
+	} else {
+		PyErr_SetString(PyExc_RuntimeError,
+			"must pass an argument to obtain bytecode from");
+		return NULL;
+	}
+
+	return tObj;
+}
+
 static PyObject *
 tcldis_printbc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -54,40 +99,9 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 			&tclCode, &tclObjPtr))
 		return NULL;
 
-	Tcl_Obj *tObj;
-
-	if (tclCode != NULL) {
-		tObj = Tcl_NewObj();
-		Tcl_IncrRefCount(tObj);
-		Tcl_AppendStringsToObj(tObj, tclCode, NULL);
-		/*
-		 * This is unusual - even strings failing parsing return ok (and
-		 * create a bytecode object detailing the error)
-		 */
-		if (Tcl_ConvertToType(interp, tObj, tBcType) != TCL_OK) {
-			Tcl_DecrRefCount(tObj);
-			PyErr_SetString(PyExc_RuntimeError,
-				"failed to convert to tcl bytecode");
-			return NULL;
-		}
-	} else if (tclObjPtr != 0) {
-		/*
-		 * This is pretty dangerous, we get a raw pointer and just take
-		 * it on faith that it points to a Tcl_Obj
-		 */
-		tObj = (Tcl_Obj *)tclObjPtr;
-		/* TODO: are we allowed to access typePtr directly? */
-		if (tObj->typePtr != tBcType) {
-			PyErr_SetString(PyExc_RuntimeError,
-				"pointer doesn't point to Tcl_Obj of bytecode");
-			return NULL;
-		}
-		Tcl_IncrRefCount(tObj);
-	} else {
-		PyErr_SetString(PyExc_RuntimeError,
-			"must pass an argument to obtain bytecode from");
+	Tcl_Obj *tObj = getbc(tclCode, tclObjPtr);
+	if (tObj == NULL)
 		return NULL;
-	}
 
 	/*
 	 * In 8.6 this changed to tObj->internalRep.twoPtrValue.ptr1. In practice,
