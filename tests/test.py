@@ -6,7 +6,7 @@ from textwrap import dedent
 class TestBasicTcl(unittest.TestCase):
 
     def assertTclEqual(self, tcl):
-        self.assertEqual(tcl, tcldis.decompile(tcl))
+        self.assertEqual(tcl, tcldis.decompile(*tcldis.getbc(tcl)))
 
     def test_set(self):
         self.assertTclEqual('set x 15\n')

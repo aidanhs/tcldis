@@ -522,11 +522,10 @@ def _bblock_join(bblocks):
 
     return change
 
-def decompile(tcl_code):
+def decompile(bytecode, literals):
     """
-    Given some tcl code, compile it to bytecode then attempt to decompile it.
+    Given some bytecode and literals, attempt to decompile to tcl.
     """
-    bytecode, literals = getbc(tcl_code)
     insts = getinsts(bytecode)
     bblocks = _bblock_create(insts)
     # Reduce bblock logic
