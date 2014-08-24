@@ -65,6 +65,7 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 		 * create a bytecode object detailing the error)
 		 */
 		if (Tcl_ConvertToType(interp, tObj, tBcType) != TCL_OK) {
+			Tcl_DecrRefCount(tObj);
 			PyErr_SetString(PyExc_RuntimeError,
 				"failed to convert to tcl bytecode");
 			return NULL;
