@@ -15,12 +15,9 @@ convSimple(Tcl_Obj *tObj)
 	return PyString_FromStringAndSize(tclVar, tclVarSize);
 }
 
-static const char *tclTypeName[] = {
-	"dict", "cmdName", "int", NULL
-};
-static PyObject *(*tclTypeConverter[]) (Tcl_Obj *tObj) = {
-	convSimple, convSimple, convSimple
-};
+static int numTclTypes = 0;
+static const Tcl_ObjType **tclType = NULL;
+static PyObject *(**tclTypeConverter) (Tcl_Obj *tObj) = NULL;
 
 static Tcl_Obj *
 getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -118,8 +115,8 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 		if (tLitObj->typePtr == NULL) {
 			pTclVar = convSimple(tLitObj);
 		} else {
-			for (tIdx = 0; tclTypeName[tIdx] != NULL; tIdx++) {
-				if (strcmp(tLitObj->typePtr->name, tclTypeName[tIdx]) != 0)
+			for (tIdx = 0; tIdx < numTclTypes; tIdx++) {
+				if (tLitObj->typePtr != tclType[tIdx])
 					continue;
 				pTclVar = (*(tclTypeConverter[tIdx]))(tLitObj);
 			}
@@ -259,6 +256,28 @@ init_tcldis(void)
 {
 	interp = Tcl_CreateInterp();
 	tBcType = Tcl_GetObjType("bytecode");
+
+	Tcl_Obj *tTypes = Tcl_NewObj();
+	Tcl_IncrRefCount(tTypes);
+	if (Tcl_AppendAllObjTypes(interp, tTypes) != TCL_OK ||
+			Tcl_ListObjLength(interp, tTypes, &numTclTypes) != TCL_OK) {
+		Tcl_DecrRefCount(tTypes);
+		PyErr_SetString(PyExc_RuntimeError,
+			"could not get list of Tcl types");
+		return;
+	};
+
+	tclType = malloc(numTclTypes*sizeof(*tclType));
+	tclTypeConverter = malloc(numTclTypes*sizeof(*tclTypeConverter));
+	int i;
+	Tcl_Obj *tType;
+	for (i = 0; i < numTclTypes; i++) {
+		Tcl_ListObjIndex(interp, tTypes, i, &tType);
+		tclType[i] = Tcl_GetObjType(Tcl_GetString(tType));
+		tclTypeConverter[i] = convSimple;
+	}
+
+	Tcl_DecrRefCount(tTypes);
 
 	PyObject *m = Py_InitModule("_tcldis", TclDisMethods);
 	if (m == NULL)
