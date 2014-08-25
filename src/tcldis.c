@@ -292,6 +292,10 @@ tcldis_literal_convert(PyObject *self, PyObject *args, PyObject *kwargs)
 			(int (*) (Tcl_Obj *, char **))convFnPtr;
 		break;
 	}
+	if (i == numTclTypes) {
+		runerr("Could not find type name");
+		return NULL;
+	}
 
 	return Py_BuildValue("O", Py_None);
 }
