@@ -6,6 +6,22 @@
 static Tcl_Interp *interp;
 static const Tcl_ObjType *tBcType;
 
+/* Used for converting types */
+static PyObject *
+convSimple(Tcl_Obj *tObj)
+{
+	int tclVarSize;
+	char *tclVar = Tcl_GetStringFromObj(tObj, &tclVarSize);
+	return PyString_FromStringAndSize(tclVar, tclVarSize);
+}
+
+static const char *tclTypeName[] = {
+	"dict", "cmdName", "int", NULL
+};
+static PyObject *(*tclTypeConverter[]) (Tcl_Obj *tObj) = {
+	convSimple, convSimple, convSimple
+};
+
 static Tcl_Obj *
 getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -93,13 +109,28 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	PyObject *pTclVars = PyList_New(0);
 	if (pTclVars == NULL)
 		return NULL;
-	int i, tclVarSize;
-	char *tclVar;
+	int i, tIdx;
+	Tcl_Obj *tLitObj;
 	PyObject *pTclVar;
 	for (i = 0; i < bc->numLitObjects; i++) {
-		tclVar = Tcl_GetStringFromObj(bc->objArrayPtr[i], &tclVarSize);
-		pTclVar = PyString_FromStringAndSize(tclVar, tclVarSize);
+		tLitObj = bc->objArrayPtr[i];
+		pTclVar = NULL;
+		if (tLitObj->typePtr == NULL) {
+			pTclVar = convSimple(tLitObj);
+		} else {
+			for (tIdx = 0; tclTypeName[tIdx] != NULL; tIdx++) {
+				if (strcmp(tLitObj->typePtr->name, tclTypeName[tIdx]) != 0)
+					continue;
+				pTclVar = (*(tclTypeConverter[tIdx]))(tLitObj);
+			}
+			if (pTclVar == NULL) {
+				PyErr_Format(PyExc_RuntimeError,
+					"Unknown Tcl type %s",
+					tLitObj->typePtr->name);
+			}
+		}
 		if (pTclVar == NULL || PyList_Append(pTclVars, pTclVar) != 0) {
+			Py_CLEAR(pTclVar);
 			Py_CLEAR(pTclVars);
 			break;
 		}
