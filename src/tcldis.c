@@ -13,17 +13,17 @@ runerr(const char *msg)
 }
 
 /* Used for converting types */
-static PyObject *
-convSimple(Tcl_Obj *tObj)
+static int
+convSimple(Tcl_Obj *tObj, char** tclString)
 {
-	int tclVarSize;
-	char *tclVar = Tcl_GetStringFromObj(tObj, &tclVarSize);
-	return PyString_FromStringAndSize(tclVar, tclVarSize);
+	int tclStringSize;
+	*tclString = Tcl_GetStringFromObj(tObj, &tclStringSize);
+	return tclStringSize;
 }
 
 static int numTclTypes = 0;
 static const Tcl_ObjType **tclType = NULL;
-static PyObject *(**tclTypeConverter) (Tcl_Obj *tObj) = NULL;
+static int (**tclTypeConverter) (Tcl_Obj *, char **) = NULL;
 
 static Tcl_Obj *
 getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -111,17 +111,24 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 		return NULL;
 	int i, tIdx;
 	Tcl_Obj *tLitObj;
+	char *tclString;
+	int tclStringSize;
 	PyObject *pTclVar;
 	for (i = 0; i < bc->numLitObjects; i++) {
 		tLitObj = bc->objArrayPtr[i];
 		pTclVar = NULL;
 		if (tLitObj->typePtr == NULL) {
-			pTclVar = convSimple(tLitObj);
+			tclStringSize = convSimple(tLitObj, &tclString);
+			if (tclStringSize > -1)
+				pTclVar = PyString_FromStringAndSize(tclString, tclStringSize);
 		} else {
 			for (tIdx = 0; tIdx < numTclTypes; tIdx++) {
 				if (tLitObj->typePtr != tclType[tIdx])
 					continue;
-				pTclVar = (*(tclTypeConverter[tIdx]))(tLitObj);
+				tclStringSize = (*(tclTypeConverter[tIdx]))(tLitObj, &tclString);
+				if (tclStringSize > -1)
+					pTclVar = PyString_FromStringAndSize(tclString, tclStringSize);
+				break;
 			}
 			if (pTclVar == NULL) {
 				PyErr_Format(PyExc_RuntimeError,
@@ -282,7 +289,7 @@ tcldis_literal_convert(PyObject *self, PyObject *args, PyObject *kwargs)
 		if (strcmp(typeName, tclType[i]->name) != 0)
 			continue;
 		tclTypeConverter[i] =
-			(PyObject *(*) (Tcl_Obj *tObj))convFnPtr;
+			(int (*) (Tcl_Obj *, char **))convFnPtr;
 		break;
 	}
 
