@@ -6,6 +6,12 @@
 static Tcl_Interp *interp;
 static const Tcl_ObjType *tBcType;
 
+inline void
+runerr(const char *msg)
+{
+	PyErr_SetString(PyExc_RuntimeError, msg);
+}
+
 /* Used for converting types */
 static PyObject *
 convSimple(Tcl_Obj *tObj)
@@ -42,8 +48,7 @@ getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
 		 */
 		if (Tcl_ConvertToType(interp, tObj, tBcType) != TCL_OK) {
 			Tcl_DecrRefCount(tObj);
-			PyErr_SetString(PyExc_RuntimeError,
-				"failed to convert to tcl bytecode");
+			runerr("failed to convert to tcl bytecode");
 			return NULL;
 		}
 	} else if (tclObjPtr != 0) {
@@ -54,14 +59,12 @@ getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
 		tObj = (Tcl_Obj *)tclObjPtr;
 		/* TODO: are we allowed to access typePtr directly? */
 		if (tObj->typePtr != tBcType) {
-			PyErr_SetString(PyExc_RuntimeError,
-				"pointer doesn't point to Tcl_Obj of bytecode");
+			runerr("pointer doesn't point to Tcl_Obj of bytecode");
 			return NULL;
 		}
 		Tcl_IncrRefCount(tObj);
 	} else {
-		PyErr_SetString(PyExc_RuntimeError,
-			"must pass an argument to obtain bytecode from");
+		runerr("must pass an argument to obtain bytecode from");
 		return NULL;
 	}
 
@@ -262,8 +265,7 @@ init_tcldis(void)
 	if (Tcl_AppendAllObjTypes(interp, tTypes) != TCL_OK ||
 			Tcl_ListObjLength(interp, tTypes, &numTclTypes) != TCL_OK) {
 		Tcl_DecrRefCount(tTypes);
-		PyErr_SetString(PyExc_RuntimeError,
-			"could not get list of Tcl types");
+		runerr("could not get list of Tcl types");
 		return;
 	};
 
