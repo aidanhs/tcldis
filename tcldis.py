@@ -356,6 +356,7 @@ def _inst_reductions():
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
         'listLength': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'llength'), kv[0]])},
+        'incrStkImm': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'incr'), kv[0]] + ([BCLiteral(None, str(inst.ops[0][1]))] if inst.ops[0][1] != 1 else []))},
         # Jumps
         'jump1': {'nargs': N(0), 'redfn': lambda i, v: BCJump(None, i, v)},
         'jumpFalse1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(False, i, v)},

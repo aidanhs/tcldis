@@ -20,6 +20,9 @@ class TestBasicTcl(unittest.TestCase):
     def test_ref_array(self):
         self.assertTclEqual('puts $x(a)\n')
 
+    def test_incr(self):
+        self.assertTclEqual('incr x\nincr x 5\n')
+
     # TODO: ensure compiles to more than just a proc call
     #def test_if(self):
     #    tcl = dedent(
