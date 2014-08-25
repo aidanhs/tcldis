@@ -6,6 +6,7 @@ import copy
 import _tcldis
 printbc = _tcldis.printbc
 getbc = _tcldis.getbc
+literal_convert = _tcldis.literal_convert
 
 INSTRUCTIONS = _tcldis.inst_table()
 JUMP_INSTRUCTIONS = (

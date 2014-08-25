@@ -240,6 +240,55 @@ err:
 	return NULL;
 }
 
+static PyObject *
+tcldis_literal_convert(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+	static char *kwlist[] = {"type_name", "conv_fn_ptr", NULL};
+	char *typeName = NULL;
+	Py_ssize_t convFnPtr = 0;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sn", kwlist,
+			&typeName, &convFnPtr))
+		return NULL;
+
+	int i;
+
+	/* TODO: if no args are specified, return current details */
+	if (typeName == NULL && convFnPtr == 0) {
+		PyObject *pTclTypes = PyList_New(0);
+		if (pTclTypes == NULL)
+			return NULL;
+		PyObject *pTclType;
+		for (i = 0; i < numTclTypes; i++) {
+			pTclType = Py_BuildValue("sn",
+				tclType[i]->name,
+				(Py_ssize_t)tclTypeConverter[i]
+			);
+			if (pTclType == NULL || PyList_Append(pTclTypes, pTclType) != 0) {
+				Py_CLEAR(pTclType);
+				Py_CLEAR(pTclTypes);
+				break;
+			}
+		}
+		return pTclTypes;
+	}
+
+	if (typeName == NULL || convFnPtr == 0) {
+		runerr("Must pass type name and conversion function pointer");
+		return NULL;
+	}
+
+	for (i = 0; i < numTclTypes; i++) {
+		if (strcmp(typeName, tclType[i]->name) != 0)
+			continue;
+		tclTypeConverter[i] =
+			(PyObject *(*) (Tcl_Obj *tObj))convFnPtr;
+		break;
+	}
+
+	return Py_BuildValue("O", Py_None);
+}
+
 static PyMethodDef TclDisMethods[] = {
 	{"printbc",  (PyCFunction)tcldis_printbc,
 		METH_VARARGS | METH_KEYWORDS,
@@ -250,6 +299,9 @@ static PyMethodDef TclDisMethods[] = {
 	{"inst_table",  (PyCFunction)tcldis_inst_table,
 		METH_VARARGS | METH_KEYWORDS,
 		"Get the instruction table for Tcl bytecode."},
+	{"literal_convert",  (PyCFunction)tcldis_literal_convert,
+		METH_VARARGS | METH_KEYWORDS,
+		"Set the converter for a type of literal value."},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
 
