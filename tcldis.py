@@ -372,6 +372,7 @@ def _inst_reductions():
     def N(n): return lambda _: n
     firstop = lambda inst: inst.ops[0]
     def destack(v): v.stack(-1); return v
+    def lit(s): return BCLiteral(None, s)
     def can_destack(arg):
         return any([
             isinstance(arg, bctype)
@@ -386,8 +387,8 @@ def _inst_reductions():
         # Callers
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
-        'listLength': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'llength'), kv[0]])},
-        'incrStkImm': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'incr'), kv[0]] + ([BCLiteral(None, str(inst.ops[0]))] if inst.ops[0] != 1 else []))},
+        'listLength': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('llength'), kv[0]])},
+        'incrStkImm': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('incr'), kv[0]] + ([lit(str(inst.ops[0]))] if inst.ops[0] != 1 else []))},
         # Jumps
         'jump1': {'nargs': N(0), 'redfn': lambda i, v: BCJump(None, i, v)},
         'jumpFalse1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(False, i, v)},
@@ -396,10 +397,10 @@ def _inst_reductions():
         'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
         # Variable sets
-        'storeStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), kv[0], kv[1]])},
-        'storeArrayStk': {'nargs': N(3), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), BCArrayElt(None, kv[:2]), kv[2]])},
-        'storeScalarStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), kv[0], kv[1]])},
-        'storeScalar1': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'set'), BCLiteral(None, inst.ops[0]), kv[0]])},
+        'storeStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])},
+        'storeArrayStk': {'nargs': N(3), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])},
+        'storeScalarStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])},
+        'storeScalar1': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])},
         # Value ignoring
         'done': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
         'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
