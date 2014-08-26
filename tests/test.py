@@ -89,15 +89,15 @@ class TestTclProc(unittest.TestCase):
         self.assertEqual(tcl, tcldis.decompile(tcldis.getbc(proc_name='p')))
 
 def setupcase(test_class, name, case):
-	setattr(
-		test_class,
-		'test_' + name,
-		lambda self: self.assertTclEqual(case)
-	)
+    setattr(
+        test_class,
+        'test_' + name,
+        lambda self: self.assertTclEqual(case)
+    )
 
 for name, case in cases:
-	setupcase(TestTclScript, name, case)
-	setupcase(TestTclProc, name, case)
+    setupcase(TestTclScript, name, case)
+    setupcase(TestTclProc, name, case)
 
 if __name__ == '__main__':
     unittest.main()
