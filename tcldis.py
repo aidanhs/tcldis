@@ -401,6 +401,7 @@ def _inst_reductions():
         'storeArrayStk': {'nargs': N(3), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])},
         'storeScalarStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])},
         'storeScalar1': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])},
+        'storeArray1': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])},
         # Value ignoring
         'done': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
         'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
