@@ -77,13 +77,12 @@ switch -exact $a {
 # TODO: dict for **
 
 class TestTclScript(unittest.TestCase):
-
     def assertTclEqual(self, tcl):
         self.assertEqual(tcl, tcldis.decompile(*tcldis.getbc(tcl)))
 
 def setupcase(test_class, name, case):
 	setattr(
-		TestTclScript,
+		test_class,
 		'test_' + name,
 		lambda self: self.assertTclEqual(case)
 	)
