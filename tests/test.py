@@ -76,16 +76,17 @@ switch -exact $a {
 
 # TODO: foreach **
 # TODO: dict for **
+# TODO: expr **
 
 class TestTclScript(unittest.TestCase):
     def assertTclEqual(self, tcl):
-        self.assertEqual(tcl, tcldis.decompile(*tcldis.getbc(tcl)))
+        self.assertEqual(tcl, tcldis.decompile(tcldis.getbc(tcl)))
 
 class TestTclProc(unittest.TestCase):
     def assertTclEqual(self, tcl):
         proctcl = 'proc p {} {\n' + tcl + '\n}'
         tclpy.eval(proctcl)
-        self.assertEqual(tcl, tcldis.decompile(*tcldis.getbc(proc_name='p')))
+        self.assertEqual(tcl, tcldis.decompile(tcldis.getbc(proc_name='p')))
 
 def setupcase(test_class, name, case):
 	setattr(

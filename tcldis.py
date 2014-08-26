@@ -5,7 +5,10 @@ import copy
 
 import _tcldis
 printbc = _tcldis.printbc
-getbc = _tcldis.getbc
+def getbc(*args, **kwargs):
+    bytecode, literals = _tcldis.getbc(*args, **kwargs)
+    return BC(bytecode, literals)
+getbc.__doc__ = _tcldis.getbc.__doc__
 literal_convert = _tcldis.literal_convert
 
 INSTRUCTIONS = _tcldis.inst_table()
@@ -38,21 +41,45 @@ OPERANDS = [
     ('AUX4',  _getop('>I')),
 ]
 
+class BC(object):
+    def __init__(self, bytecode, literals):
+        self._bytecode = bytecode
+        self._literals = literals
+        self._pc = 0
+    def __len__(self):
+        return len(self._bytecode) - self._pc
+    def literal(self, n):
+        return self._literals[n]
+    def peek1(self):
+        return self._bytecode[self._pc]
+    def pc(self):
+        return self._pc
+    def get(self, n):
+        oldpc = self._pc
+        self._pc += n
+        return self._bytecode[oldpc:self._pc]
+    def copy(self):
+        bc = BC(self._bytecode, self._literals)
+        bc._pc = self._pc
+        return bc
+
 # Tcl bytecode instruction
 class Inst(object):
-    def __init__(self, bytecode, loc, *args, **kwargs):
+    def __init__(self, bc, *args, **kwargs):
         super(Inst, self).__init__(*args, **kwargs)
+        self.loc = bc.pc()
+        bytecode = bc.get(INSTRUCTIONS[bc.peek1()]['num_bytes'])
         inst_type = INSTRUCTIONS[bytecode.pop(0)]
         self.name = inst_type['name']
         self.ops = []
         for opnum in inst_type['operands']:
-            optype = OPERANDS[opnum]
-            self.ops.append((optype[0], optype[1](bytecode)))
-        self.loc = loc
+            optype, getop = OPERANDS[opnum]
+            assert optype in ('INT1', 'INT4', 'UINT1', 'UINT4')
+            self.ops.append(getop(bytecode))
         # Note that this doesn't get printed on str() so we only see
         # the value when it gets reduced to a BCJump class
         if self.name in JUMP_INSTRUCTIONS:
-            self.targetloc = self.loc + self.ops[0][1]
+            self.targetloc = self.loc + self.ops[0]
 
     def __repr__(self):
         return '<%s: %s %s>' % (
@@ -169,8 +196,8 @@ class BCReturn(BCValue):
         super(BCReturn, self).__init__(*args, **kwargs)
         assert len(self.value) == 2
         assert self.value[1].value == '' # Options
-        assert self.inst.ops[0][1] == 0 # Code
-        assert self.inst.ops[1][1] == 1 # Level
+        assert self.inst.ops[0] == 0 # Code
+        assert self.inst.ops[1] == 1 # Level
     def __repr__(self):
         return 'BCReturn(%s)' % (repr(self.value),)
     def fmt(self):
@@ -270,18 +297,14 @@ class BBlock(object):
 # Functions start here #
 ########################
 
-def getinsts(bytecode):
+def getinsts(bc):
     """
     Given bytecode in a bytearray, return a list of Inst objects.
     """
-    bytecode = bytecode[:]
+    bc = bc.copy()
     insts = []
-    pc = 0
-    while len(bytecode) > 0:
-        num_bytes = INSTRUCTIONS[bytecode[0]]['num_bytes']
-        insts.append(Inst(bytecode[:num_bytes], pc))
-        pc += num_bytes
-        bytecode = bytecode[num_bytes:]
+    while len(bc) > 0:
+        insts.append(Inst(bc))
     return insts
 
 def _bblock_create(insts):
@@ -340,7 +363,7 @@ def _inst_reductions():
     representations.
     """
     def N(n): return lambda _: n
-    firstop = lambda inst: inst.ops[0][1]
+    firstop = lambda inst: inst.ops[0]
     def destack(v): v.stack(-1); return v
     def can_destack(arg):
         return any([
@@ -357,7 +380,7 @@ def _inst_reductions():
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
         'listLength': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'llength'), kv[0]])},
-        'incrStkImm': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'incr'), kv[0]] + ([BCLiteral(None, str(inst.ops[0][1]))] if inst.ops[0][1] != 1 else []))},
+        'incrStkImm': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [BCLiteral(None, 'incr'), kv[0]] + ([BCLiteral(None, str(inst.ops[0]))] if inst.ops[0] != 1 else []))},
         # Jumps
         'jump1': {'nargs': N(0), 'redfn': lambda i, v: BCJump(None, i, v)},
         'jumpFalse1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(False, i, v)},
@@ -385,7 +408,7 @@ def _inst_reductions():
 
 INST_REDUCTIONS = _inst_reductions()
 
-def _bblock_reduce(bblock, literals):
+def _bblock_reduce(bc, bblock):
     """
     For the given basic block, attempt to reduce all instructions to my higher
     level representations.
@@ -398,7 +421,7 @@ def _bblock_reduce(bblock, literals):
         for i, inst in enumerate(bblock.insts[:]):
             if not isinstance(inst, Inst): continue
             if inst.name in ('push1', 'push4'):
-                bblock.insts[i] = BCLiteral(inst, literals[inst.ops[0][1]])
+                bblock.insts[i] = BCLiteral(inst, bc.literal(inst.ops[0]))
                 loopchange = True
                 break
 
@@ -524,17 +547,18 @@ def _bblock_join(bblocks):
 
     return change
 
-def decompile(bytecode, literals):
+def decompile(bc):
     """
     Given some bytecode and literals, attempt to decompile to tcl.
     """
-    insts = getinsts(bytecode)
+    assert isinstance(bc, BC)
+    insts = getinsts(bc)
     bblocks = _bblock_create(insts)
     # Reduce bblock logic
     change = True
     while change:
         change = False
-        change = any([_bblock_reduce(bblock, literals) for bblock in bblocks])
+        change = any([_bblock_reduce(bc, bblock) for bblock in bblocks])
         change = change or _bblock_flow(bblocks)
         change = change or _bblock_join(bblocks)
     outstr = ''
