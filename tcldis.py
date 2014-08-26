@@ -389,13 +389,16 @@ def _inst_reductions():
         'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
         'listLength': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('llength'), kv[0]])},
         'incrStkImm': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('incr'), kv[0]] + ([lit(str(inst.ops[0]))] if inst.ops[0] != 1 else []))},
+        'incrScalar1Imm': {'nargs': N(0), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('incr'), lit(inst.ops[0])] + ([lit(str(inst.ops[1]))] if inst.ops[1] != 1 else []))},
         # Jumps
         'jump1': {'nargs': N(0), 'redfn': lambda i, v: BCJump(None, i, v)},
         'jumpFalse1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(False, i, v)},
         'jumpTrue1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(True, i, v)},
         # Variable references
-        'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
         'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
+        'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
+        'loadScalar1': {'nargs': N(0), 'redfn': lambda inst, kv: BCVarRef(inst, [lit(inst.ops[0])])},
+        'loadArray1': {'nargs': N(1), 'redfn': lambda inst, kv: BCArrayRef(inst, [lit(inst.ops[0]), kv[0]])},
         # Variable sets
         'storeStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])},
         'storeArrayStk': {'nargs': N(3), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])},
