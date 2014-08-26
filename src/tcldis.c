@@ -75,6 +75,7 @@ getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
 			return NULL;
 		}
 		tObj = procPtr->bodyPtr;
+		Tcl_IncrRefCount(tObj);
 	} else {
 		RUNERR("must pass an argument to obtain bytecode from");
 		return NULL;
