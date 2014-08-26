@@ -6,8 +6,8 @@ import copy
 import _tcldis
 printbc = _tcldis.printbc
 def getbc(*args, **kwargs):
-    bytecode, literals = _tcldis.getbc(*args, **kwargs)
-    return BC(bytecode, literals)
+    bytecode, bcliterals, bclocals = _tcldis.getbc(*args, **kwargs)
+    return BC(bytecode, bcliterals, bclocals)
 getbc.__doc__ = _tcldis.getbc.__doc__
 literal_convert = _tcldis.literal_convert
 
@@ -42,14 +42,17 @@ OPERANDS = [
 ]
 
 class BC(object):
-    def __init__(self, bytecode, literals):
+    def __init__(self, bytecode, bcliterals, bclocals):
         self._bytecode = bytecode
-        self._literals = literals
+        self._literals = bcliterals
+        self._locals = bclocals
         self._pc = 0
     def __len__(self):
         return len(self._bytecode) - self._pc
     def literal(self, n):
         return self._literals[n]
+    def local(self, n):
+        return self._locals[n]
     def peek1(self):
         return self._bytecode[self._pc]
     def pc(self):
@@ -59,7 +62,7 @@ class BC(object):
         self._pc += n
         return self._bytecode[oldpc:self._pc]
     def copy(self):
-        bc = BC(self._bytecode, self._literals)
+        bc = BC(self._bytecode, self._literals, self._locals)
         bc._pc = self._pc
         return bc
 
@@ -74,8 +77,12 @@ class Inst(object):
         self.ops = []
         for opnum in inst_type['operands']:
             optype, getop = OPERANDS[opnum]
-            assert optype in ('INT1', 'INT4', 'UINT1', 'UINT4')
-            self.ops.append(getop(bytecode))
+            if optype in ('INT1', 'INT4', 'UINT1', 'UINT4'):
+                self.ops.append(getop(bytecode))
+            elif optype in ('LVT1', 'LVT4'):
+                self.ops.append(bc.local(getop(bytecode)))
+            else:
+                assert False
         # Note that this doesn't get printed on str() so we only see
         # the value when it gets reduced to a BCJump class
         if self.name in JUMP_INSTRUCTIONS:

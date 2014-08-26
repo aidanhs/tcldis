@@ -118,11 +118,12 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	 * currently unused by bytecode tcl objects.
 	 */
 	ByteCode *bc = tObj->internalRep.otherValuePtr;
+	int i;
 
 	PyObject *pTclVars = PyList_New(0);
 	if (pTclVars == NULL)
 		return NULL;
-	int i, tIdx;
+	int tIdx;
 	Tcl_Obj *tLitObj;
 	char *tclString;
 	int tclStringSize;
@@ -154,6 +155,27 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 		}
 	}
 
+	PyObject *pTclLocals = PyList_New(0);
+	if (pTclLocals == NULL)
+		return NULL;
+	Proc *procPtr = bc->procPtr;
+	int numLocals = 0;
+	CompiledLocal *tclLocal = NULL;
+	PyObject *pTclLocal;
+	if (procPtr != NULL) {
+		numLocals = procPtr->numCompiledLocals;
+		tclLocal = procPtr->firstLocalPtr;
+	}
+	for (i = 0; i < numLocals; i++) {
+		pTclLocal = PyString_FromStringAndSize(tclLocal->name, tclLocal->nameLength);
+		if (pTclLocal == NULL || PyList_Append(pTclLocals, pTclLocal) != 0) {
+			Py_CLEAR(pTclLocal);
+			Py_CLEAR(pTclLocals);
+			break;
+		}
+		tclLocal = tclLocal->nextPtr;
+	}
+
 	/* If this errors we'll return NULL anyway, don't check explicitly */
 	/* The cast is fine because Python treats bytearrays as unsigned */
 	PyObject *pBuf = PyByteArray_FromStringAndSize(
@@ -161,12 +183,13 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 
 	Tcl_DecrRefCount(tObj);
 
-	if (pTclVars == NULL || pBuf == NULL) {
+	if (pTclVars == NULL || pTclLocals == NULL || pBuf == NULL) {
 		Py_CLEAR(pTclVars);
+		Py_CLEAR(pTclLocals);
 		Py_CLEAR(pBuf);
 		return NULL;
 	}
-	return Py_BuildValue("NN", pBuf, pTclVars);
+	return Py_BuildValue("NNN", pBuf, pTclVars, pTclLocals);
 }
 
 static PyObject *
