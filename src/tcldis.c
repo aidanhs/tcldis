@@ -120,37 +120,37 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	ByteCode *bc = tObj->internalRep.otherValuePtr;
 	int i;
 
-	PyObject *pTclVars = PyList_New(0);
-	if (pTclVars == NULL)
+	PyObject *pTclLits = PyList_New(0);
+	if (pTclLits == NULL)
 		return NULL;
 	int tIdx;
 	Tcl_Obj *tLitObj;
 	char *tclString;
 	int tclStringSize;
-	PyObject *pTclVar;
+	PyObject *pTclLit;
 	for (i = 0; i < bc->numLitObjects; i++) {
 		tLitObj = bc->objArrayPtr[i];
-		pTclVar = NULL;
+		pTclLit = NULL;
 		if (tLitObj->typePtr == NULL) {
 			tclStringSize = convSimple(tLitObj, &tclString);
 			if (tclStringSize > -1)
-				pTclVar = PyString_FromStringAndSize(tclString, tclStringSize);
+				pTclLit = PyString_FromStringAndSize(tclString, tclStringSize);
 		} else {
 			for (tIdx = 0; tIdx < numTclTypes; tIdx++) {
 				if (tLitObj->typePtr != tclType[tIdx])
 					continue;
 				tclStringSize = (*(tclTypeConverter[tIdx]))(tLitObj, &tclString);
 				if (tclStringSize > -1)
-					pTclVar = PyString_FromStringAndSize(tclString, tclStringSize);
+					pTclLit = PyString_FromStringAndSize(tclString, tclStringSize);
 				break;
 			}
-			if (pTclVar == NULL) {
+			if (pTclLit == NULL) {
 				RUNERR("Unknown Tcl type %s", tLitObj->typePtr->name);
 			}
 		}
-		if (pTclVar == NULL || PyList_Append(pTclVars, pTclVar) != 0) {
-			Py_CLEAR(pTclVar);
-			Py_CLEAR(pTclVars);
+		if (pTclLit == NULL || PyList_Append(pTclLits, pTclLit) != 0) {
+			Py_CLEAR(pTclLit);
+			Py_CLEAR(pTclLits);
 			break;
 		}
 	}
@@ -183,13 +183,13 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 
 	Tcl_DecrRefCount(tObj);
 
-	if (pTclVars == NULL || pTclLocals == NULL || pBuf == NULL) {
-		Py_CLEAR(pTclVars);
+	if (pTclLits == NULL || pTclLocals == NULL || pBuf == NULL) {
+		Py_CLEAR(pTclLits);
 		Py_CLEAR(pTclLocals);
 		Py_CLEAR(pBuf);
 		return NULL;
 	}
-	return Py_BuildValue("NNN", pBuf, pTclVars, pTclLocals);
+	return Py_BuildValue("NNN", pBuf, pTclLits, pTclLocals);
 }
 
 static PyObject *
