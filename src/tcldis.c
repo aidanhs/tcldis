@@ -314,7 +314,12 @@ static PyMethodDef TclDisMethods[] = {
 PyMODINIT_FUNC
 init_tcldis(void)
 {
-	interp = Tcl_CreateInterp();
+	interp = PyCapsule_Import("tclpy.interp", 0);
+	if (interp == NULL) {
+		PyErr_Clear();
+		interp = Tcl_CreateInterp();
+	}
+
 	tBcType = Tcl_GetObjType("bytecode");
 
 	Tcl_Obj *tTypes = Tcl_NewObj();
