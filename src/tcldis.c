@@ -24,12 +24,13 @@ static int (**tclTypeConverter) (Tcl_Obj *, char **) = NULL;
 static Tcl_Obj *
 getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	static char *kwlist[] = {"tcl_code", "tclobj_ptr", NULL};
+	static char *kwlist[] = {"tcl_code", "tclobj_ptr", "proc_name", NULL};
 	char *tclCode = NULL;
 	Py_ssize_t tclObjPtr = 0;
+	char *tclProcName = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sn", kwlist,
-			&tclCode, &tclObjPtr))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|sns", kwlist,
+			&tclCode, &tclObjPtr, &tclProcName))
 		return NULL;
 
 	Tcl_Obj *tObj;
@@ -59,6 +60,21 @@ getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
 			return NULL;
 		}
 		Tcl_IncrRefCount(tObj);
+	} else if (tclProcName != NULL) {
+		Proc *procPtr = TclFindProc((Interp *)interp, tclProcName);
+		if (procPtr == NULL) {
+			RUNERR("could not find tcl proc");
+			return NULL;
+		}
+		/* For simplicity, always compile bytecode */
+		if (TclProcCompileProc(interp, procPtr,
+			procPtr->bodyPtr, procPtr->cmdPtr->nsPtr,
+			"body of proc", tclProcName) != TCL_OK) {
+
+			RUNERR("proc compilation failed");
+			return NULL;
+		}
+		tObj = procPtr->bodyPtr;
 	} else {
 		RUNERR("must pass an argument to obtain bytecode from");
 		return NULL;
