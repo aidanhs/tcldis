@@ -120,6 +120,10 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	ByteCode *bc = tObj->internalRep.otherValuePtr;
 	int i;
 
+	/*
+	 * Tcl bytecode has an array of literals it references, rather than
+	 * encoding Tcl_Objs directly in the bc. Extract them.
+	 */
 	PyObject *pTclLits = PyList_New(0);
 	PyObject *pTclLit;
 	int numLits = bc->numLitObjects;
@@ -156,6 +160,11 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 		}
 	}
 
+	/*
+	 * Tcl proc bytecode has an array of locals it references, rather than
+	 * storing variable names in the literal array. If this bytecode came
+	 * from a proc, extract the locals.
+	 */
 	PyObject *pTclLocals = PyList_New(0);
 	PyObject *pTclLocal;
 	int numLocals = 0;
@@ -176,6 +185,10 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 		tclLocal = tclLocal->nextPtr;
 	}
 
+	/*
+	 * Tcl bytecode has an array of bytes representing the actual
+	 * instructions and operands. Put the bytes in a bytearray.
+	 */
 	/* If this errors we'll return NULL anyway, don't check explicitly */
 	/* The cast is fine because Python treats bytearrays as unsigned */
 	PyObject *pBuf = PyByteArray_FromStringAndSize(
