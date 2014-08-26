@@ -121,14 +121,15 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	int i;
 
 	PyObject *pTclLits = PyList_New(0);
-	if (pTclLits == NULL)
-		return NULL;
+	PyObject *pTclLit;
+	int numLits = bc->numLitObjects;
 	int tIdx;
 	Tcl_Obj *tLitObj;
 	char *tclString;
 	int tclStringSize;
-	PyObject *pTclLit;
-	for (i = 0; i < bc->numLitObjects; i++) {
+	if (pTclLits == NULL)
+		numLits = 0;
+	for (i = 0; i < numLits; i++) {
 		tLitObj = bc->objArrayPtr[i];
 		pTclLit = NULL;
 		if (tLitObj->typePtr == NULL) {
@@ -156,16 +157,15 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	}
 
 	PyObject *pTclLocals = PyList_New(0);
-	if (pTclLocals == NULL)
-		return NULL;
-	Proc *procPtr = bc->procPtr;
-	int numLocals = 0;
-	CompiledLocal *tclLocal = NULL;
 	PyObject *pTclLocal;
-	if (procPtr != NULL) {
-		numLocals = procPtr->numCompiledLocals;
-		tclLocal = procPtr->firstLocalPtr;
+	int numLocals = 0;
+	CompiledLocal *tclLocal;
+	if (bc->procPtr != NULL) {
+		numLocals = bc->procPtr->numCompiledLocals;
+		tclLocal = bc->procPtr->firstLocalPtr;
 	}
+	if (pTclLocals == NULL)
+		numLocals = 0;
 	for (i = 0; i < numLocals; i++) {
 		pTclLocal = PyString_FromStringAndSize(tclLocal->name, tclLocal->nameLength);
 		if (pTclLocal == NULL || PyList_Append(pTclLocals, pTclLocal) != 0) {
