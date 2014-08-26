@@ -6,11 +6,7 @@
 static Tcl_Interp *interp;
 static const Tcl_ObjType *tBcType;
 
-inline void
-runerr(const char *msg)
-{
-	PyErr_SetString(PyExc_RuntimeError, msg);
-}
+#define RUNERR(...) PyErr_Format(PyExc_RuntimeError, ##__VA_ARGS__)
 
 /* Used for converting types */
 static int
@@ -48,7 +44,7 @@ getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
 		 */
 		if (Tcl_ConvertToType(interp, tObj, tBcType) != TCL_OK) {
 			Tcl_DecrRefCount(tObj);
-			runerr("failed to convert to tcl bytecode");
+			RUNERR("failed to convert to tcl bytecode");
 			return NULL;
 		}
 	} else if (tclObjPtr != 0) {
@@ -59,12 +55,12 @@ getBcTclObj(PyObject *self, PyObject *args, PyObject *kwargs)
 		tObj = (Tcl_Obj *)tclObjPtr;
 		/* TODO: are we allowed to access typePtr directly? */
 		if (tObj->typePtr != tBcType) {
-			runerr("pointer doesn't point to Tcl_Obj of bytecode");
+			RUNERR("pointer doesn't point to Tcl_Obj of bytecode");
 			return NULL;
 		}
 		Tcl_IncrRefCount(tObj);
 	} else {
-		runerr("must pass an argument to obtain bytecode from");
+		RUNERR("must pass an argument to obtain bytecode from");
 		return NULL;
 	}
 
@@ -131,9 +127,7 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 				break;
 			}
 			if (pTclVar == NULL) {
-				PyErr_Format(PyExc_RuntimeError,
-					"Unknown Tcl type %s",
-					tLitObj->typePtr->name);
+				RUNERR("Unknown Tcl type %s", tLitObj->typePtr->name);
 			}
 		}
 		if (pTclVar == NULL || PyList_Append(pTclVars, pTclVar) != 0) {
@@ -281,7 +275,7 @@ tcldis_literal_convert(PyObject *self, PyObject *args, PyObject *kwargs)
 	}
 
 	if (typeName == NULL || convFnPtr == 0) {
-		runerr("Must pass type name and conversion function pointer");
+		RUNERR("Must pass type name and conversion function pointer");
 		return NULL;
 	}
 
@@ -293,7 +287,7 @@ tcldis_literal_convert(PyObject *self, PyObject *args, PyObject *kwargs)
 		break;
 	}
 	if (i == numTclTypes) {
-		runerr("Could not find type name");
+		RUNERR("Could not find type name");
 		return NULL;
 	}
 
@@ -328,7 +322,7 @@ init_tcldis(void)
 	if (Tcl_AppendAllObjTypes(interp, tTypes) != TCL_OK ||
 			Tcl_ListObjLength(interp, tTypes, &numTclTypes) != TCL_OK) {
 		Tcl_DecrRefCount(tTypes);
-		runerr("could not get list of Tcl types");
+		RUNERR("could not get list of Tcl types");
 		return;
 	};
 
