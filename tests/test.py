@@ -103,7 +103,7 @@ def setupcase(test_class, name, case):
 
 for name, case in cases:
     setupcase(TestTclScript, name, case)
-    if name in ('set', 'set_array', 'ref', 'ref_array', 'incr', 'variable'):
+    if name in ('set', 'set_array', 'ref', 'ref_array', 'incr', 'variable', 'return'):
         setupcase(TestTclProc, name, case)
 
 if __name__ == '__main__':
