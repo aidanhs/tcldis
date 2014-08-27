@@ -384,7 +384,7 @@ def _inst_reductions():
             for bctype in [BCLiteral, BCVarRef, BCArrayRef]
         ])
 
-    def getargsgen(nargs_fn, checkargs_fn):
+    def getargsgen(nargs_fn, checkargs_fn=None):
         def getargsfn(inst, bblock, i):
             nargs = nargs_fn(inst)
             arglist = []
@@ -396,7 +396,7 @@ def _inst_reductions():
                     break
                 if arg.stack() < 1:
                     continue
-                if not checkargs_fn(arg):
+                if checkargs_fn and not checkargs_fn(arg):
                     break
                 arglist.append(arg)
                 argis.append(argi)
@@ -449,11 +449,8 @@ def _inst_reductions():
         'startCommand': [[N(0)], lambda _1, _2: []],
     }
     for inst, (getargsgen_args, redfn) in inst_reductions.items():
-        if len(getargsgen_args) == 1:
-            getargsgen_args.append(lambda arg: isinstance(arg, BCValue))
-        nargsfn, checkfn = getargsgen_args
         inst_reductions[inst] = {
-            'getargsfn': getargsgen(nargsfn, checkfn),
+            'getargsfn': getargsgen(*getargsgen_args),
             'redfn': redfn,
         }
     return inst_reductions
