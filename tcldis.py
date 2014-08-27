@@ -183,6 +183,17 @@ class BCArrayRef(BCValue):
     def fmt(self):
         return '$' + self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
 
+class BCConcat(BCValue):
+    def __init__(self, *args, **kwargs):
+        super(BCConcat, self).__init__(*args, **kwargs)
+        assert len(self.value) > 1
+    def __repr__(self):
+        return 'BCConcat(%s)' % (repr(self.value),)
+    def fmt(self):
+        # TODO: this won't always work, need to be careful of
+        # literals following variables
+        return '"' + ''.join([v.fmt() for v in self.value]) + '"'
+
 class BCProcCall(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCProcCall, self).__init__(*args, **kwargs)
@@ -505,6 +516,7 @@ def _inst_reductions():
         'neq': [[N(2)], BCExpr],
         'not': [[N(1)], BCExpr],
         # Misc
+        'concat1': [[firstop], BCConcat],
         'pop': [[N(1), can_pop], lambda i, v: destack(v[0])],
         'dup': [[N(1), is_simple], lambda i, v: [v[0], copy.copy(v[0])]],
         'done': [[N(1)], BCDone],
