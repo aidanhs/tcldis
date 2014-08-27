@@ -267,6 +267,24 @@ class BCReturn(BCProcCall):
         if self.value[0].value == '': return 'return'
         return 'return ' + self.value[0].fmt()
 
+# TODO: I'm totally unsure about where this goes. tclCompile.c says it has a -1
+# stack effect, which means it doesn't put anything back on the stack. But
+# sometimes it's used instead of an actual return, which does put something on
+# the stack (after consuming two items). The overall stack effect is the same,
+# but the end value is different...
+class BCDone(BCProcCall):
+    def __init__(self, *args, **kwargs):
+        super(BCDone, self).__init__(*args, **kwargs)
+        assert len(self.value) == 1
+        self.value[0].stack(-1)
+    def __repr__(self):
+        return 'BCDone(%s)' % (repr(self.value),)
+    def fmt(self):
+        # In the general case it's impossible to guess whether 'return' was written.
+        if isinstance(self.value[0], BCProcCall):
+            return self.value[0].fmt()
+        return 'return ' + self.value[0].fmt()
+
 # self.value contains two bblocks, self.inst contains two jumps
 class BCIf(BCProcCall):
     def __init__(self, *args, **kwargs):
@@ -342,19 +360,6 @@ class BCArrayElt(BCNonValue):
         return 'BCArrayElt(%s)' % (repr(self.value),)
     def fmt(self):
         return self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
-
-class BCDone(BCNonValue):
-    def __init__(self, *args, **kwargs):
-        super(BCDone, self).__init__(*args, **kwargs)
-        assert len(self.value) == 1
-        self.value[0].stack(-1)
-    def __repr__(self):
-        return 'BCDone(%s)' % (repr(self.value),)
-    def fmt(self):
-        # In the general case it's impossible to guess whether 'return' was written.
-        if isinstance(self.value[0], BCProcCall):
-            return self.value[0].fmt()
-        return 'return ' + self.value[0].fmt()
 
 ##############################
 # Any basic block structures #
