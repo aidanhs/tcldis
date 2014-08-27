@@ -217,6 +217,28 @@ class BCVariable(BCProcCall):
             cmd = '[' + cmd + ']'
         return cmd
 
+class BCExpr(BCValue):
+    def __init__(self, *args, **kwargs):
+        super(BCExpr, self).__init__(*args, **kwargs)
+        if self.inst.name in ('lt', 'gt'):
+            assert len(self.value) == 2
+        elif self.inst.name == 'not':
+            assert len(self.value) == 1
+        else:
+            assert False
+    def __repr__(self):
+        return 'BCExpr(%s)' % (self.value,)
+    def expr(self):
+        if self.inst.name in ('lt', 'gt'):
+            if self.inst.name == 'lt': op = '<'
+            elif self.inst.name == 'gt': op = '>'
+            expr = self.value[0].fmt() + ' ' + op + ' ' + self.value[1].fmt()
+        elif self.inst.name == 'not':
+            expr = '!' + self.value[0].fmt()
+        return expr
+    def fmt(self):
+        return '[expr {' + self.expr() + '}]'
+
 class BCReturn(BCProcCall):
     def __init__(self, *args, **kwargs):
         super(BCReturn, self).__init__(*args, **kwargs)
@@ -439,9 +461,6 @@ def _inst_reductions():
             return arglist
         return getargsfn
 
-        # Expression operators
-        #'gt': [N(2), BCExpr],
-
     # nargs, redfn, checkfn
     inst_reductions = {
         # Callers
@@ -467,6 +486,10 @@ def _inst_reductions():
         'storeArrayStk': [[N(3)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])],
         'storeScalar1': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])],
         'storeArray1': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])],
+        # Expressions
+        'gt': [[N(2)], BCExpr],
+        'lt': [[N(2)], BCExpr],
+        'not': [[N(1)], BCExpr],
         # Misc
         'pop': [[N(1), can_pop], lambda i, v: destack(v[0])],
         'dup': [[N(1), is_simple], lambda i, v: [v[0], copy.copy(v[0])]],
