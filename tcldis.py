@@ -218,23 +218,26 @@ class BCVariable(BCProcCall):
         return cmd
 
 class BCExpr(BCValue):
+    _exprmap = {
+        'gt': ('>', 2),
+        'lt': ('<', 2),
+        'ge': ('>=', 2),
+        'le': ('<=', 2),
+        'eq': ('==', 2),
+        'not': ('!', 1),
+    }
     def __init__(self, *args, **kwargs):
         super(BCExpr, self).__init__(*args, **kwargs)
-        if self.inst.name in ('lt', 'gt'):
-            assert len(self.value) == 2
-        elif self.inst.name == 'not':
-            assert len(self.value) == 1
-        else:
-            assert False
+        op, nargs = self._exprmap[self.inst.name]
+        assert len(self.value) == nargs
     def __repr__(self):
         return 'BCExpr(%s)' % (self.value,)
     def expr(self):
-        if self.inst.name in ('lt', 'gt'):
-            if self.inst.name == 'lt': op = '<'
-            elif self.inst.name == 'gt': op = '>'
+        op, nargs = self._exprmap[self.inst.name]
+        if nargs == 1:
+            expr = op + self.value[0].fmt()
+        elif nargs == 2:
             expr = self.value[0].fmt() + ' ' + op + ' ' + self.value[1].fmt()
-        elif self.inst.name == 'not':
-            expr = '!' + self.value[0].fmt()
         return expr
     def fmt(self):
         return '[expr {' + self.expr() + '}]'
@@ -489,6 +492,9 @@ def _inst_reductions():
         # Expressions
         'gt': [[N(2)], BCExpr],
         'lt': [[N(2)], BCExpr],
+        'ge': [[N(2)], BCExpr],
+        'le': [[N(2)], BCExpr],
+        'eq': [[N(2)], BCExpr],
         'not': [[N(1)], BCExpr],
         # Misc
         'pop': [[N(1), can_pop], lambda i, v: destack(v[0])],
