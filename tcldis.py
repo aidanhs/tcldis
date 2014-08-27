@@ -405,10 +405,7 @@ def _inst_reductions():
     def destack(v): v.stack(-1); return v
     def lit(s): return BCLiteral(None, s)
     def can_pop(arg):
-        return any([
-            isinstance(arg, bctype)
-            for bctype in [BCProcCall, BCIf]
-        ])
+        return isinstance(arg, BCProcCall)
     def is_simple(arg):
         return any([
             isinstance(arg, bctype)
