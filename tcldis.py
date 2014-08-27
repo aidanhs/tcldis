@@ -411,42 +411,48 @@ def _inst_reductions():
             return arglist
         return getargsfn
 
+    # nargs, redfn, checkfn
     inst_reductions = {
         # Callers
-        'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
-        'invokeStk4': {'nargs': firstop, 'redfn': BCProcCall},
-        'listLength': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('llength'), kv[0]])},
-        'incrStkImm': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('incr'), kv[0]] + ([lit(str(inst.ops[0]))] if inst.ops[0] != 1 else []))},
-        'incrScalar1Imm': {'nargs': N(0), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('incr'), lit(inst.ops[0])] + ([lit(str(inst.ops[1]))] if inst.ops[1] != 1 else []))},
+        'invokeStk1': [firstop, BCProcCall],
+        'invokeStk4': [firstop, BCProcCall],
+        'listLength': [N(1), lambda inst, kv: BCProcCall(inst, [lit('llength'), kv[0]])],
+        'incrStkImm': [N(1), lambda inst, kv: BCProcCall(inst, [lit('incr'), kv[0]] + ([lit(str(inst.ops[0]))] if inst.ops[0] != 1 else []))],
+        'incrScalar1Imm': [N(0), lambda inst, kv: BCProcCall(inst, [lit('incr'), lit(inst.ops[0])] + ([lit(str(inst.ops[1]))] if inst.ops[1] != 1 else []))],
         # Jumps
-        'jump1': {'nargs': N(0), 'redfn': lambda i, v: BCJump(None, i, v)},
-        'jumpFalse1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(False, i, v)},
-        'jumpTrue1': {'nargs': N(1), 'redfn': lambda i, v: BCJump(True, i, v)},
+        'jump1': [N(0), lambda i, v: BCJump(None, i, v)],
+        'jumpFalse1': [N(1), lambda i, v: BCJump(False, i, v)],
+        'jumpTrue1': [N(1), lambda i, v: BCJump(True, i, v)],
         # Variable references
-        'loadStk': {'nargs': N(1), 'redfn': BCVarRef},
-        'loadArrayStk': {'nargs': N(2), 'redfn': BCArrayRef},
-        'loadScalar1': {'nargs': N(0), 'redfn': lambda inst, kv: BCVarRef(inst, [lit(inst.ops[0])])},
-        'loadArray1': {'nargs': N(1), 'redfn': lambda inst, kv: BCArrayRef(inst, [lit(inst.ops[0]), kv[0]])},
+        'loadStk': [N(1), BCVarRef],
+        'loadArrayStk': [N(2), BCArrayRef],
+        'loadScalar1': [N(0), lambda inst, kv: BCVarRef(inst, [lit(inst.ops[0])])],
+        'loadArray1': [N(1), lambda inst, kv: BCArrayRef(inst, [lit(inst.ops[0]), kv[0]])],
         # Variable sets
-        'storeStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])},
-        'storeArrayStk': {'nargs': N(3), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])},
-        'storeScalarStk': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])},
-        'storeScalar1': {'nargs': N(1), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])},
-        'storeArray1': {'nargs': N(2), 'redfn': lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])},
+        'storeStk': [N(2), lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])],
+        'storeArrayStk': [N(3), lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])],
+        'storeScalarStk': [N(2), lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])],
+        'storeScalar1': [N(1), lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])],
+        'storeArray1': [N(2), lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])],
         # Value ignoring
-        'done': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
-        'pop': {'nargs': N(1), 'redfn': lambda i, v: destack(v[0]), 'checkfn': can_destack},
+        'done': [N(1), lambda i, v: destack(v[0]), can_destack],
+        'pop': [N(1), lambda i, v: destack(v[0]), can_destack],
         # Misc
-        'dup': {'nargs': N(1), 'redfn': lambda i, v: [v[0], copy.copy(v[0])], 'checkfn': is_simple},
-        'returnImm': {'nargs': N(2), 'redfn': BCReturn},
+        'dup': [N(1), lambda i, v: [v[0], copy.copy(v[0])], is_simple],
+        'returnImm': [N(2), BCReturn],
         # Useless
-        'nop': {'nargs': N(0), 'redfn': lambda _1, _2: []},
-        'startCommand': {'nargs': N(0), 'redfn': lambda _1, _2: []},
+        'nop': [N(0), lambda _1, _2: []],
+        'startCommand': [N(0), lambda _1, _2: []],
     }
-    for details in inst_reductions.values():
-        if 'checkfn' not in details:
-            details['checkfn'] = lambda arg: isinstance(arg, BCValue)
-        details['getargsfn'] = getargsgen(details['nargs'], details['checkfn'])
+    for inst, details in inst_reductions.items():
+        if len(details) == 2:
+            details = details + [lambda arg: isinstance(arg, BCValue)]
+        assert len(details) == 3
+        nargsfn, redfn, checkfn = details
+        inst_reductions[inst] = {
+            'getargsfn': getargsgen(nargsfn, checkfn),
+            'redfn': redfn,
+        }
     return inst_reductions
 
 INST_REDUCTIONS = _inst_reductions()
