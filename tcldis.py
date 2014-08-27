@@ -461,7 +461,7 @@ def _bblock_reduce(bc, bblock):
     while loopchange:
         loopchange = False
 
-        for i, inst in enumerate(bblock.insts[:]):
+        for i, inst in enumerate(bblock.insts):
             if not isinstance(inst, Inst): continue
             if inst.name in ('push1', 'push4'):
                 bblock.insts[i] = BCLiteral(inst, bc.literal(inst.ops[0]))
