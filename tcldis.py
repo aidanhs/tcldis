@@ -276,6 +276,8 @@ class BCDone(BCProcCall):
     def __init__(self, *args, **kwargs):
         super(BCDone, self).__init__(*args, **kwargs)
         assert len(self.value) == 1
+        # Unfortunately cannot be sure this is a BCProcCall as done is sometimes
+        # used for the return call
         self.value[0].stack(-1)
     def __repr__(self):
         return 'BCDone(%s)' % (repr(self.value),)
@@ -299,8 +301,10 @@ class BCIf(BCProcCall):
             if isinstance(inst, BCLiteral):
                 assert inst.value == ''
                 bblock.insts[-1:] = []
-            else:
+            elif isinstance(inst, BCProcCall):
                 inst.stack(-1)
+            else:
+                assert False
     def __repr__(self):
         return 'BCIf(%s)' % (self.value,)
     def fmt(self):
