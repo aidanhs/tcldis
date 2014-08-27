@@ -606,13 +606,15 @@ def _bblock_join(bblocks):
         if len(bblocks[i:i+2]) < 2:
             continue
         bblock1, bblock2 = bblocks[i:i+2]
-        if _get_jump(bblock1) is not None:
-            continue
         targets = [target for target in [
             (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
             for src_bblock in bblocks
         ] if target is not None]
-        if bblock1 in targets or bblock2 in targets:
+        # If the end of bblock1 or the beginning of bblock2 should remain as
+        # bblock boundaries, do not join them.
+        if _get_jump(bblock1) is not None:
+            continue
+        if bblock2 in targets:
             continue
         bblock1.insts.extend(bblock2.insts)
         bblocks[i+1:i+2] = []
