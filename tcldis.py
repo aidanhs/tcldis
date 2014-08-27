@@ -255,6 +255,7 @@ class BCReturn(BCProcCall):
         if self.value[0].value == '': return 'return'
         return 'return ' + self.value[0].fmt()
 
+# self.value contains two bblocks, self.inst contains two jumps
 class BCIf(BCProcCall):
     def __init__(self, *args, **kwargs):
         super(BCIf, self).__init__(*args, **kwargs)
@@ -273,9 +274,14 @@ class BCIf(BCProcCall):
     def __repr__(self):
         return 'BCIf(%s)' % (self.value,)
     def fmt(self):
-        conditionstr = self.inst[0].value[0].fmt()
-        if self.inst[0].on is True:
-            conditionstr = '!' + conditionstr
+        if isinstance(self.inst[0].value[0], BCExpr):
+            conditionstr = self.inst[0].value[0].expr()
+            if self.inst[0].on is True:
+                conditionstr = '!(' + conditionstr + ')'
+        else:
+            conditionstr = self.inst[0].value[0].fmt()
+            if self.inst[0].on is True:
+                conditionstr = '!' + conditionstr
         cmd = (
             'if {%s} {' +
             '\n\t' + self.value[0].fmt().replace('\n', '\n\t') + '\n' +
