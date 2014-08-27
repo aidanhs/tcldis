@@ -9,9 +9,10 @@ cases = []
 cases.append(('set', 'set x 15\n'))
 cases.append(('set_array', 'set x(a) 15\n'))
 cases.append(('array_set', 'array set x {a 1 b 2}\n')) # **
-cases.append(('ref', 'puts $a\n'))
+cases.append(('ref', 'puts $a\nputs $u::a\n'))
 cases.append(('ref_array', 'puts $x(a)\n'))
 cases.append(('incr', 'incr x\nincr x 5\n')) # **
+cases.append(('variable', 'variable x\n')) # **
 
 #cases.append(('list', 'puts [list a b c]\n')) # **
 
@@ -73,8 +74,13 @@ switch -exact $a {
 #\tputs $i
 #}
 #''')) # **
+cases.append(('foreach', '''\
+foreach {a b} {1 2 3 4} {
+	puts $a
+	puts $b
+}
+''')) # **
 
-# TODO: foreach **
 # TODO: dict for **
 # TODO: expr **
 
@@ -97,7 +103,7 @@ def setupcase(test_class, name, case):
 
 for name, case in cases:
     setupcase(TestTclScript, name, case)
-    if name in ('set', 'set_array', 'ref', 'ref_array', 'incr'):
+    if name in ('set', 'set_array', 'ref', 'ref_array', 'incr', 'variable'):
         setupcase(TestTclProc, name, case)
 
 if __name__ == '__main__':
