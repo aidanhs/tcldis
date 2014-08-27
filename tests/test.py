@@ -16,6 +16,8 @@ cases.append(('variable', 'variable x\n')) # **
 
 #cases.append(('list', 'puts [list a b c]\n')) # **
 
+cases.append(('expr', 'puts [expr {$a > 1}]\n')) # **
+
 cases.append(('return', 'return 15\n')) # **
 #cases.append(('if', '''\
 #if {$a} {
@@ -103,7 +105,7 @@ def setupcase(test_class, name, case):
 
 for name, case in cases:
     setupcase(TestTclScript, name, case)
-    if name in ('set', 'set_array', 'ref', 'ref_array', 'incr', 'variable', 'return'):
+    if name not in ('array_set', 'foreach'):
         setupcase(TestTclProc, name, case)
 
 if __name__ == '__main__':
