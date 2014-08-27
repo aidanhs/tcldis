@@ -527,6 +527,7 @@ def _inst_reductions():
         'done': [[N(1)], BCDone],
         'returnImm': [[N(2)], BCReturn],
         # Useless
+        'tryCvtToNumeric': [[N(0)], lambda _1, _2: []], # Theoretically does something...
         'nop': [[N(0)], lambda _1, _2: []],
         'startCommand': [[N(0)], lambda _1, _2: []],
     }
