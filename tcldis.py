@@ -449,13 +449,14 @@ def _inst_reductions():
         'jumpTrue1': [[N(1)], lambda i, v: BCJump(True, i, v)],
         # Variable references
         'loadStk': [[N(1)], BCVarRef],
+        'loadScalarStk': [[N(1)], BCVarRef],
         'loadArrayStk': [[N(2)], BCArrayRef],
         'loadScalar1': [[N(0)], lambda inst, kv: BCVarRef(inst, [lit(inst.ops[0])])],
         'loadArray1': [[N(1)], lambda inst, kv: BCArrayRef(inst, [lit(inst.ops[0]), kv[0]])],
         # Variable sets
         'storeStk': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])],
-        'storeArrayStk': [[N(3)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])],
         'storeScalarStk': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])],
+        'storeArrayStk': [[N(3)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])],
         'storeScalar1': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])],
         'storeArray1': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])],
         # Value ignoring
