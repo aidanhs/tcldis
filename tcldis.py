@@ -422,6 +422,13 @@ def _bblock_create(insts):
                     instbeforeidx += 1
                 instbefore = insts[instbeforeidx]
                 ends.add(instbefore.loc)
+        elif inst.name == 'beginCatch4':
+            starts.add(inst.loc)
+            if inst.loc != 0:
+                ends.add(insts[i-1].loc)
+        elif inst.name == 'endCatch':
+            ends.add(inst.loc)
+            newstart = True
     ends.add(insts[-1].loc)
     # Create the basic blocks
     assert len(starts) == len(ends)
@@ -592,7 +599,18 @@ def _bblock_reduce(bc, bblock):
 def _get_jump(bblock):
     if len(bblock.insts) == 0: return None
     jump = bblock.insts[-1]
-    return jump if isinstance(jump, BCJump) else None
+    if not isinstance(jump, BCJump): return None
+    return jump
+def _is_catch_begin(bblock):
+    if len(bblock.insts) == 0: return False
+    catch = bblock.insts[0]
+    if not isinstance(catch, Inst): return False
+    return catch.name == 'beginCatch4'
+def _is_catch_end(bblock):
+    if len(bblock.insts) == 0: return False
+    catch = bblock.insts[-1]
+    if not isinstance(catch, Inst): return False
+    return catch.name == 'endCatch'
 
 def _bblock_flow(bblocks):
     # Recognise a basic if.
@@ -651,6 +669,10 @@ def _bblock_join(bblocks):
         if _get_jump(bblock1) is not None:
             continue
         if bblock2 in targets:
+            continue
+        if _is_catch_end(bblock1):
+            continue
+        if _is_catch_begin(bblock2):
             continue
         bblock1.insts.extend(bblock2.insts)
         bblocks[i+1:i+2] = []
