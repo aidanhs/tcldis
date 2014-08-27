@@ -456,8 +456,6 @@ def _inst_reductions():
     firstop = lambda inst: inst.ops[0]
     def destack(v): v.stack(-1); return v
     def lit(s): return BCLiteral(None, s)
-    def can_pop(arg):
-        return isinstance(arg, BCProcCall)
     def is_simple(arg):
         return any([
             isinstance(arg, bctype)
@@ -527,7 +525,7 @@ def _inst_reductions():
         'not': [[N(1)], BCExpr],
         # Misc
         'concat1': [[firstop], BCConcat],
-        'pop': [[N(1), can_pop], lambda i, v: destack(v[0])],
+        'pop': [[N(1), lambda arg: isinstance(arg, BCProcCall)], lambda i, v: destack(v[0])],
         'dup': [[N(1), is_simple], lambda i, v: [v[0], copy.copy(v[0])]],
         'done': [[N(1)], BCDone],
         'returnImm': [[N(2)], BCReturn],
