@@ -503,9 +503,7 @@ def _bblock_flow(bblocks):
     # We only care about the end block for checking that everything does end up
     # there. The other three blocks end up 'consumed' by a BCIf object.
     change = False
-    loopchange = True
-    while loopchange:
-        loopchange = False
+    while True:
 
         for i in range(len(bblocks)):
             if len(bblocks[i:i+4]) < 4:
@@ -533,19 +531,18 @@ def _bblock_flow(bblocks):
             assert jumps == [jump0, jump1]
             bblocks[i].insts.append(BCIf(jumps, bblocks[i+1:i+3]))
             bblocks[i+1:i+3] = []
-            loopchange = True
             break
 
-        if loopchange:
-            change = True
+        else:
+            break
+
+        change = True
 
     return change
 
 def _bblock_join(bblocks):
     change = False
-    loopchange = True
-    while loopchange:
-        loopchange = False
+    while True:
 
         for i in range(len(bblocks)):
             if len(bblocks[i:i+2]) < 2:
@@ -561,11 +558,12 @@ def _bblock_join(bblocks):
                 continue
             bblock1.insts.extend(bblock2.insts)
             bblocks[i+1:i+2] = []
-            loopchange = True
             break
 
-        if loopchange:
-            change = True
+        else:
+            break
+
+        change = True
 
     return change
 
