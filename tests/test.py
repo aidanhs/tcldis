@@ -14,7 +14,8 @@ cases.append(('ref_array', 'puts $x(a)\n'))
 cases.append(('incr', 'incr x\nincr x 5\n')) # **
 cases.append(('variable', 'variable x\n')) # **
 
-#cases.append(('list', 'puts [list a b c]\n')) # **
+#cases.append(('list1', 'puts [list a b c]\n')) # **
+cases.append(('list2', 'puts [list $a b c]\n')) # **
 
 cases.append(('expr', 'puts [expr {$a > 1}]\n')) # **
 

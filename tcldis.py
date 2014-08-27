@@ -492,6 +492,7 @@ def _inst_reductions():
         # Callers
         'invokeStk1': [[firstop], BCProcCall],
         'invokeStk4': [[firstop], BCProcCall],
+        'list':[[firstop], lambda inst, kv: BCProcCall(inst, [lit('list')] + kv)],
         'listLength': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('llength'), kv[0]])],
         'incrStkImm': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('incr'), kv[0]] + ([lit(str(inst.ops[0]))] if inst.ops[0] != 1 else []))],
         'incrScalar1Imm': [[N(0)], lambda inst, kv: BCProcCall(inst, [lit('incr'), lit(inst.ops[0])] + ([lit(str(inst.ops[1]))] if inst.ops[1] != 1 else []))],
