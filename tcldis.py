@@ -263,7 +263,7 @@ class BCIf(BCValue):
             cmd = '[' + cmd + ']'
         return cmd
 
-_destackable_bctypes = [BCProcCall, BCIf, BCReturn, BCVariable]
+_destackable_bctypes = [BCProcCall, BCIf, BCReturn]
 
 ####################################################################
 # My own representation of anything that cannot be used as a value #
