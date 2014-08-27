@@ -110,11 +110,6 @@ class BCValue(object):
     def stack(self, n=None):
         if n is None:
             return self._stackn
-        try:
-            assert any([isinstance(self, bctype) for bctype in _destackable_bctypes])
-        except AssertionError:
-            print('Unrecognised pop of %s, please report.' % (self,))
-            raise
         assert n == -1
         assert self._stackn == 1
         self._stackn -= 1
@@ -263,7 +258,6 @@ class BCIf(BCProcCall):
             cmd = '[' + cmd + ']'
         return cmd
 
-_destackable_bctypes = [BCProcCall, BCIf, BCReturn]
 
 ####################################################################
 # My own representation of anything that cannot be used as a value #
@@ -406,10 +400,10 @@ def _inst_reductions():
     firstop = lambda inst: inst.ops[0]
     def destack(v): v.stack(-1); return v
     def lit(s): return BCLiteral(None, s)
-    def can_destack(arg):
+    def can_pop(arg):
         return any([
             isinstance(arg, bctype)
-            for bctype in _destackable_bctypes
+            for bctype in [BCProcCall, BCIf]
         ])
     def is_simple(arg):
         return any([
@@ -473,8 +467,8 @@ def _inst_reductions():
         'storeScalar1': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])],
         'storeArray1': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])],
         # Value ignoring
-        'done': [[N(1), can_destack], BCDone],
-        'pop': [[N(1), can_destack], lambda i, v: destack(v[0])],
+        'done': [[N(1)], BCDone],
+        'pop': [[N(1), can_pop], lambda i, v: destack(v[0])],
         # Misc
         'dup': [[N(1), is_simple], lambda i, v: [v[0], copy.copy(v[0])]],
         'returnImm': [[N(2)], BCReturn],
