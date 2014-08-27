@@ -124,6 +124,7 @@ class BCValue(object):
 class BCLiteral(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCLiteral, self).__init__(*args, **kwargs)
+        assert type(self.value) is str
     def __repr__(self):
         return 'BCLiteral(%s)' % (repr(self.value),)
     def fmt(self):
@@ -198,6 +199,25 @@ class BCProcCall(BCValue):
             cmd = '[' + cmd + ']'
         return cmd
 
+# This one is odd. inst.ops[0] is the index to the locals table, kv[0]
+# is namespace::value, or value if looking at the same namespace (i.e.
+# most of the time). For now we only handle the case where they're both
+# the same, i.e. looking at the same namespace.
+# Additionally, note there is a hack we apply before reducing to recognise
+# that Tcl gives variable calls a return value.
+class BCVariable(BCValue):
+    def __init__(self, *args, **kwargs):
+        super(BCVariable, self).__init__(*args, **kwargs)
+        assert len(self.value) == 1
+        assert self.value[0].fmt() == self.inst.ops[0]
+    def __repr__(self):
+        return 'BCVariable(%s)' % (self.value,)
+    def fmt(self):
+        cmd = 'variable %s' % (self.value[0].fmt(),)
+        if self.stack():
+            cmd = '[' + cmd + ']'
+        return cmd
+
 class BCReturn(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCReturn, self).__init__(*args, **kwargs)
@@ -243,7 +263,7 @@ class BCIf(BCValue):
             cmd = '[' + cmd + ']'
         return cmd
 
-_destackable_bctypes = [BCProcCall, BCIf, BCReturn]
+_destackable_bctypes = [BCProcCall, BCIf, BCReturn, BCVariable]
 
 ####################################################################
 # My own representation of anything that cannot be used as a value #
@@ -413,7 +433,6 @@ def _inst_reductions():
 
         # Expression operators
         #'gt': [N(2), BCExpr],
-        #'variable': [[(N(1)], BCVariable],
 
     # nargs, redfn, checkfn
     inst_reductions = {
@@ -423,6 +442,7 @@ def _inst_reductions():
         'listLength': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('llength'), kv[0]])],
         'incrStkImm': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('incr'), kv[0]] + ([lit(str(inst.ops[0]))] if inst.ops[0] != 1 else []))],
         'incrScalar1Imm': [[N(0)], lambda inst, kv: BCProcCall(inst, [lit('incr'), lit(inst.ops[0])] + ([lit(str(inst.ops[1]))] if inst.ops[1] != 1 else []))],
+        'variable': [[N(1)], BCVariable],
         # Jumps
         'jump1': [[N(0)], lambda i, v: BCJump(None, i, v)],
         'jumpFalse1': [[N(1)], lambda i, v: BCJump(False, i, v)],
@@ -457,6 +477,21 @@ def _inst_reductions():
 
 INST_REDUCTIONS = _inst_reductions()
 
+def _bblock_hack(bc, bblock):
+    """
+    The Tcl compiler has some annoying implementation details which must be
+    recognised before any reduction.
+    """
+    # 'variable' does not push a result so the Tcl compiler inserts a push.
+    variableis = []
+    for i, inst in enumerate(bblock.insts):
+        if not isinstance(inst, Inst): continue
+        if not inst.name == 'variable': continue
+        assert bblock.insts[i+1].name in ('push1', 'push4')
+        assert bc.literal(bblock.insts[i+1].ops[0]) == ''
+        variableis.append(i)
+    [bblock.insts.pop(i+1) for i in reversed(variableis)]
+
 def _bblock_reduce(bc, bblock):
     """
     For the given basic block, attempt to reduce all instructions to my higher
@@ -464,6 +499,7 @@ def _bblock_reduce(bc, bblock):
     """
     for i, inst in enumerate(bblock.insts):
         if not isinstance(inst, Inst): continue
+
         if inst.name in ('push1', 'push4'):
             bblock.insts[i] = BCLiteral(inst, bc.literal(inst.ops[0]))
 
@@ -473,10 +509,12 @@ def _bblock_reduce(bc, bblock):
             redfn = IRED['redfn']
             arglist = getargsfn(inst, bblock, i)
             if arglist is None: continue
+            # args are popped so inst location changes
+            i = i - len(arglist)
             newinsts = redfn(inst, arglist)
             if type(newinsts) is not list:
                 newinsts = [newinsts]
-            bblock.insts[i-len(arglist):i+1-len(arglist)] = newinsts
+            bblock.insts[i:i+1] = newinsts
 
         else:
             continue # No change, continue scanning basic blcok
@@ -560,6 +598,7 @@ def decompile(bc):
     insts = getinsts(bc)
     bblocks = _bblock_create(insts)
     # Reduce bblock logic
+    [_bblock_hack(bc, bblock) for bblock in bblocks]
     change = True
     while change:
         change = False
