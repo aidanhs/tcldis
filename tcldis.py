@@ -224,6 +224,7 @@ class BCExpr(BCValue):
         'ge': ('>=', 2),
         'le': ('<=', 2),
         'eq': ('==', 2),
+        'neq': ('!=', 2),
         'not': ('!', 1),
     }
     def __init__(self, *args, **kwargs):
@@ -501,6 +502,7 @@ def _inst_reductions():
         'ge': [[N(2)], BCExpr],
         'le': [[N(2)], BCExpr],
         'eq': [[N(2)], BCExpr],
+        'neq': [[N(2)], BCExpr],
         'not': [[N(1)], BCExpr],
         # Misc
         'pop': [[N(1), can_pop], lambda i, v: destack(v[0])],
