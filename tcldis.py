@@ -457,34 +457,32 @@ def _bblock_reduce(bc, bblock):
     level representations.
     """
     change = False
-    loopchange = True
-    while loopchange:
-        loopchange = False
+    while True:
 
         for i, inst in enumerate(bblock.insts):
             if not isinstance(inst, Inst): continue
             if inst.name in ('push1', 'push4'):
                 bblock.insts[i] = BCLiteral(inst, bc.literal(inst.ops[0]))
-                loopchange = True
-                break
 
             elif inst.name in INST_REDUCTIONS:
                 IRED = INST_REDUCTIONS[inst.name]
                 getargsfn = IRED['getargsfn']
                 redfn = IRED['redfn']
-
                 arglist = getargsfn(inst, bblock, i)
-                if arglist is None:
-                    continue
+                if arglist is None: continue
                 newinsts = redfn(inst, arglist)
                 if type(newinsts) is not list:
                     newinsts = [newinsts]
                 bblock.insts[i-len(arglist):i+1-len(arglist)] = newinsts
-                loopchange = True
-                break
 
-        if loopchange:
-            change = True
+            else:
+                continue # No change, continue scanning basic blcok
+            break # There was a change, rescan the basic block
+
+        else:
+            break # No changes made
+
+        change = True
 
     return change
 
