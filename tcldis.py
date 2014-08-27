@@ -383,6 +383,34 @@ def _inst_reductions():
             isinstance(arg, bctype)
             for bctype in [BCLiteral, BCVarRef, BCArrayRef]
         ])
+
+    def getargsgen(nargs_fn, checkargs_fn):
+        def getargsfn(inst, bblock, i):
+            nargs = nargs_fn(inst)
+            arglist = []
+            argis = []
+            for argi, arg in reversed(list(enumerate(bblock.insts[:i]))):
+                if len(arglist) == nargs:
+                    break
+                if not isinstance(arg, BCValue):
+                    break
+                if arg.stack() < 1:
+                    continue
+                if not checkargs_fn(arg):
+                    break
+                arglist.append(arg)
+                argis.append(argi)
+            arglist.reverse()
+            if len(arglist) != nargs: return None
+            # Remove any values we used as arguments.
+            # Must go from biggest index to smallest! This happens
+            # automatically because of the order we append in, but sort to
+            # make it explicit
+            for argi in sorted(argis, reverse=True):
+                bblock.insts.pop(argi)
+            return arglist
+        return getargsfn
+
     inst_reductions = {
         # Callers
         'invokeStk1': {'nargs': firstop, 'redfn': BCProcCall},
@@ -418,6 +446,7 @@ def _inst_reductions():
     for details in inst_reductions.values():
         if 'checkfn' not in details:
             details['checkfn'] = lambda arg: isinstance(arg, BCValue)
+        details['getargsfn'] = getargsgen(details['nargs'], details['checkfn'])
     return inst_reductions
 
 INST_REDUCTIONS = _inst_reductions()
@@ -441,35 +470,16 @@ def _bblock_reduce(bc, bblock):
 
             elif inst.name in INST_REDUCTIONS:
                 IRED = INST_REDUCTIONS[inst.name]
-                nargs = IRED['nargs'](inst)
+                getargsfn = IRED['getargsfn']
                 redfn = IRED['redfn']
-                checkfn = IRED['checkfn']
 
-                arglist = []
-                argis = []
-                for argi, arg in reversed(list(enumerate(bblock.insts[:i]))):
-                    if len(arglist) == nargs:
-                        break
-                    if not isinstance(arg, BCValue):
-                        break
-                    if arg.stack() < 1:
-                        continue
-                    if not checkfn(arg):
-                        break
-                    arglist.append(arg)
-                    argis.append(argi)
-                arglist.reverse()
-                if len(arglist) != nargs: continue
+                arglist = getargsfn(inst, bblock, i)
+                if arglist is None:
+                    continue
                 newinsts = redfn(inst, arglist)
                 if type(newinsts) is not list:
                     newinsts = [newinsts]
-                bblock.insts[i:i+1] = newinsts
-                # Remove any values we used as arguments.
-                # Must go from biggest index to smallest! This happens
-                # automatically because of the order we append in, but sort to
-                # make it explicit
-                for argi in sorted(argis, reverse=True):
-                    bblock.insts.pop(argi)
+                bblock.insts[i-len(arglist):i+1-len(arglist)] = newinsts
                 loopchange = True
                 break
 
