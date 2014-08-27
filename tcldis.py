@@ -590,6 +590,7 @@ def _bblock_reduce(bc, bblock):
     return False
 
 def _get_jump(bblock):
+    if len(bblock.insts) == 0: return None
     jump = bblock.insts[-1]
     return jump if isinstance(jump, BCJump) else None
 
