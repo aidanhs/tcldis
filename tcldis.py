@@ -205,7 +205,7 @@ class BCProcCall(BCValue):
 # the same, i.e. looking at the same namespace.
 # Additionally, note there is a hack we apply before reducing to recognise
 # that Tcl gives variable calls a return value.
-class BCVariable(BCValue):
+class BCVariable(BCProcCall):
     def __init__(self, *args, **kwargs):
         super(BCVariable, self).__init__(*args, **kwargs)
         assert len(self.value) == 1
