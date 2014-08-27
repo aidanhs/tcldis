@@ -466,11 +466,10 @@ def _inst_reductions():
         'storeArrayStk': [[N(3)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])],
         'storeScalar1': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])],
         'storeArray1': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])],
-        # Value ignoring
-        'done': [[N(1)], BCDone],
-        'pop': [[N(1), can_pop], lambda i, v: destack(v[0])],
         # Misc
+        'pop': [[N(1), can_pop], lambda i, v: destack(v[0])],
         'dup': [[N(1), is_simple], lambda i, v: [v[0], copy.copy(v[0])]],
+        'done': [[N(1)], BCDone],
         'returnImm': [[N(2)], BCReturn],
         # Useless
         'nop': [[N(0)], lambda _1, _2: []],
