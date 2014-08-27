@@ -186,6 +186,39 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	}
 
 	/*
+	 * Tcl bytecode instructions can reference auxiliary data in the AUX data
+	 * array. Aux data types are created with TclCreateAuxData and need a handler
+	 * per type.
+	 */
+	PyObject *pTclAuxs = PyList_New(0);
+	PyObject *pTclAux;
+	int numAuxs = bc->numAuxDataItems;
+	AuxData *tclAux;
+	if (pTclAuxs == NULL)
+		numAuxs = 0;
+
+	/*int pcOffset = 0;
+	Tcl_Obj *tBuf;*/
+
+	for (i = 0; i < numAuxs; i++) {
+		tclAux = &bc->auxDataArrayPtr[i];
+		/*if (tclAux->type->printProc == NULL) {*/
+			pTclAux = PyString_FromString(tclAux->type->name);
+		/*} else {
+			tBuf = Tcl_NewObj();
+			Tcl_IncrRefCount(tBuf);
+			tclAux->type->printProc(tclAux->clientData, tBuf, bc, pcOffset);
+			pTclAux = PyString_FromString(Tcl_GetString(tBuf));
+			Tcl_DecrRefCount(tBuf);
+		}*/
+		if (pTclAux == NULL || PyList_Append(pTclAuxs, pTclAux) != 0) {
+			Py_CLEAR(pTclAux);
+			Py_CLEAR(pTclAuxs);
+			break;
+		}
+	}
+
+	/*
 	 * Tcl bytecode has an array of bytes representing the actual
 	 * instructions and operands. Put the bytes in a bytearray.
 	 */
@@ -196,13 +229,14 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 
 	Tcl_DecrRefCount(tObj);
 
-	if (pTclLits == NULL || pTclLocals == NULL || pBuf == NULL) {
+	if (pTclLits == NULL || pTclLocals == NULL || pTclAuxs == NULL || pBuf == NULL) {
 		Py_CLEAR(pTclLits);
 		Py_CLEAR(pTclLocals);
+		Py_CLEAR(pTclAuxs);
 		Py_CLEAR(pBuf);
 		return NULL;
 	}
-	return Py_BuildValue("NNN", pBuf, pTclLits, pTclLocals);
+	return Py_BuildValue("NNNN", pBuf, pTclLits, pTclLocals, pTclAuxs);
 }
 
 static PyObject *

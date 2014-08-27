@@ -6,8 +6,8 @@ import copy
 import _tcldis
 printbc = _tcldis.printbc
 def getbc(*args, **kwargs):
-    bytecode, bcliterals, bclocals = _tcldis.getbc(*args, **kwargs)
-    return BC(bytecode, bcliterals, bclocals)
+    bytecode, bcliterals, bclocals, bcauxs = _tcldis.getbc(*args, **kwargs)
+    return BC(bytecode, bcliterals, bclocals, bcauxs)
 getbc.__doc__ = _tcldis.getbc.__doc__
 literal_convert = _tcldis.literal_convert
 
@@ -42,10 +42,11 @@ OPERANDS = [
 ]
 
 class BC(object):
-    def __init__(self, bytecode, bcliterals, bclocals):
+    def __init__(self, bytecode, bcliterals, bclocals, bcauxs):
         self._bytecode = bytecode
         self._literals = bcliterals
         self._locals = bclocals
+        self._auxs = bcauxs
         self._pc = 0
     def __len__(self):
         return len(self._bytecode) - self._pc
@@ -53,6 +54,8 @@ class BC(object):
         return self._literals[n]
     def local(self, n):
         return self._locals[n]
+    def aux(self, n):
+        return self._auxs[n]
     def peek1(self):
         return self._bytecode[self._pc]
     def pc(self):
@@ -62,7 +65,7 @@ class BC(object):
         self._pc += n
         return self._bytecode[oldpc:self._pc]
     def copy(self):
-        bc = BC(self._bytecode, self._literals, self._locals)
+        bc = BC(self._bytecode, self._literals, self._locals, self._auxs)
         bc._pc = self._pc
         return bc
 
