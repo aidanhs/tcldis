@@ -218,7 +218,7 @@ class BCVariable(BCProcCall):
             cmd = '[' + cmd + ']'
         return cmd
 
-class BCReturn(BCValue):
+class BCReturn(BCProcCall):
     def __init__(self, *args, **kwargs):
         super(BCReturn, self).__init__(*args, **kwargs)
         assert len(self.value) == 2
@@ -231,7 +231,7 @@ class BCReturn(BCValue):
         if self.value[0].value == '': return 'return'
         return 'return ' + self.value[0].fmt()
 
-class BCIf(BCValue):
+class BCIf(BCProcCall):
     def __init__(self, *args, **kwargs):
         super(BCIf, self).__init__(*args, **kwargs)
         assert len(self.value) == len(self.inst) == 2
@@ -301,6 +301,19 @@ class BCArrayElt(BCNonValue):
         return 'BCArrayElt(%s)' % (repr(self.value),)
     def fmt(self):
         return self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
+
+class BCDone(BCNonValue):
+    def __init__(self, *args, **kwargs):
+        super(BCDone, self).__init__(*args, **kwargs)
+        assert len(self.value) == 1
+        self.value[0].stack(-1)
+    def __repr__(self):
+        return 'BCDone(%s)' % (repr(self.value),)
+    def fmt(self):
+        # In the general case it's impossible to guess whether 'return' was written.
+        if isinstance(self.value[0], BCProcCall):
+            return self.value[0].fmt()
+        return 'return ' + self.value[0].fmt()
 
 ##############################
 # Any basic block structures #
@@ -460,7 +473,7 @@ def _inst_reductions():
         'storeScalar1': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])],
         'storeArray1': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])],
         # Value ignoring
-        'done': [[N(1), can_destack], lambda i, v: destack(v[0])],
+        'done': [[N(1), can_destack], BCDone],
         'pop': [[N(1), can_destack], lambda i, v: destack(v[0])],
         # Misc
         'dup': [[N(1), is_simple], lambda i, v: [v[0], copy.copy(v[0])]],
