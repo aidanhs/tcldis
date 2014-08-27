@@ -411,44 +411,47 @@ def _inst_reductions():
             return arglist
         return getargsfn
 
+        # Expression operators
+        #'gt': [N(2), BCExpr],
+        #'variable': [[(N(1)], BCVariable],
+
     # nargs, redfn, checkfn
     inst_reductions = {
         # Callers
-        'invokeStk1': [firstop, BCProcCall],
-        'invokeStk4': [firstop, BCProcCall],
-        'listLength': [N(1), lambda inst, kv: BCProcCall(inst, [lit('llength'), kv[0]])],
-        'incrStkImm': [N(1), lambda inst, kv: BCProcCall(inst, [lit('incr'), kv[0]] + ([lit(str(inst.ops[0]))] if inst.ops[0] != 1 else []))],
-        'incrScalar1Imm': [N(0), lambda inst, kv: BCProcCall(inst, [lit('incr'), lit(inst.ops[0])] + ([lit(str(inst.ops[1]))] if inst.ops[1] != 1 else []))],
+        'invokeStk1': [[firstop], BCProcCall],
+        'invokeStk4': [[firstop], BCProcCall],
+        'listLength': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('llength'), kv[0]])],
+        'incrStkImm': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('incr'), kv[0]] + ([lit(str(inst.ops[0]))] if inst.ops[0] != 1 else []))],
+        'incrScalar1Imm': [[N(0)], lambda inst, kv: BCProcCall(inst, [lit('incr'), lit(inst.ops[0])] + ([lit(str(inst.ops[1]))] if inst.ops[1] != 1 else []))],
         # Jumps
-        'jump1': [N(0), lambda i, v: BCJump(None, i, v)],
-        'jumpFalse1': [N(1), lambda i, v: BCJump(False, i, v)],
-        'jumpTrue1': [N(1), lambda i, v: BCJump(True, i, v)],
+        'jump1': [[N(0)], lambda i, v: BCJump(None, i, v)],
+        'jumpFalse1': [[N(1)], lambda i, v: BCJump(False, i, v)],
+        'jumpTrue1': [[N(1)], lambda i, v: BCJump(True, i, v)],
         # Variable references
-        'loadStk': [N(1), BCVarRef],
-        'loadArrayStk': [N(2), BCArrayRef],
-        'loadScalar1': [N(0), lambda inst, kv: BCVarRef(inst, [lit(inst.ops[0])])],
-        'loadArray1': [N(1), lambda inst, kv: BCArrayRef(inst, [lit(inst.ops[0]), kv[0]])],
+        'loadStk': [[N(1)], BCVarRef],
+        'loadArrayStk': [[N(2)], BCArrayRef],
+        'loadScalar1': [[N(0)], lambda inst, kv: BCVarRef(inst, [lit(inst.ops[0])])],
+        'loadArray1': [[N(1)], lambda inst, kv: BCArrayRef(inst, [lit(inst.ops[0]), kv[0]])],
         # Variable sets
-        'storeStk': [N(2), lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])],
-        'storeArrayStk': [N(3), lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])],
-        'storeScalarStk': [N(2), lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])],
-        'storeScalar1': [N(1), lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])],
-        'storeArray1': [N(2), lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])],
+        'storeStk': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])],
+        'storeArrayStk': [[N(3)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])],
+        'storeScalarStk': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])],
+        'storeScalar1': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])],
+        'storeArray1': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])],
         # Value ignoring
-        'done': [N(1), lambda i, v: destack(v[0]), can_destack],
-        'pop': [N(1), lambda i, v: destack(v[0]), can_destack],
+        'done': [[N(1), can_destack], lambda i, v: destack(v[0])],
+        'pop': [[N(1), can_destack], lambda i, v: destack(v[0])],
         # Misc
-        'dup': [N(1), lambda i, v: [v[0], copy.copy(v[0])], is_simple],
-        'returnImm': [N(2), BCReturn],
+        'dup': [[N(1), is_simple], lambda i, v: [v[0], copy.copy(v[0])]],
+        'returnImm': [[N(2)], BCReturn],
         # Useless
-        'nop': [N(0), lambda _1, _2: []],
-        'startCommand': [N(0), lambda _1, _2: []],
+        'nop': [[N(0)], lambda _1, _2: []],
+        'startCommand': [[N(0)], lambda _1, _2: []],
     }
-    for inst, details in inst_reductions.items():
-        if len(details) == 2:
-            details = details + [lambda arg: isinstance(arg, BCValue)]
-        assert len(details) == 3
-        nargsfn, redfn, checkfn = details
+    for inst, (getargsgen_args, redfn) in inst_reductions.items():
+        if len(getargsgen_args) == 1:
+            getargsgen_args.append(lambda arg: isinstance(arg, BCValue))
+        nargsfn, checkfn = getargsgen_args
         inst_reductions[inst] = {
             'getargsfn': getargsgen(nargsfn, checkfn),
             'redfn': redfn,
