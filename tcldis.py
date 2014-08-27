@@ -456,35 +456,28 @@ def _bblock_reduce(bc, bblock):
     For the given basic block, attempt to reduce all instructions to my higher
     level representations.
     """
-    change = False
-    while True:
+    for i, inst in enumerate(bblock.insts):
+        if not isinstance(inst, Inst): continue
+        if inst.name in ('push1', 'push4'):
+            bblock.insts[i] = BCLiteral(inst, bc.literal(inst.ops[0]))
 
-        for i, inst in enumerate(bblock.insts):
-            if not isinstance(inst, Inst): continue
-            if inst.name in ('push1', 'push4'):
-                bblock.insts[i] = BCLiteral(inst, bc.literal(inst.ops[0]))
-
-            elif inst.name in INST_REDUCTIONS:
-                IRED = INST_REDUCTIONS[inst.name]
-                getargsfn = IRED['getargsfn']
-                redfn = IRED['redfn']
-                arglist = getargsfn(inst, bblock, i)
-                if arglist is None: continue
-                newinsts = redfn(inst, arglist)
-                if type(newinsts) is not list:
-                    newinsts = [newinsts]
-                bblock.insts[i-len(arglist):i+1-len(arglist)] = newinsts
-
-            else:
-                continue # No change, continue scanning basic blcok
-            break # There was a change, rescan the basic block
+        elif inst.name in INST_REDUCTIONS:
+            IRED = INST_REDUCTIONS[inst.name]
+            getargsfn = IRED['getargsfn']
+            redfn = IRED['redfn']
+            arglist = getargsfn(inst, bblock, i)
+            if arglist is None: continue
+            newinsts = redfn(inst, arglist)
+            if type(newinsts) is not list:
+                newinsts = [newinsts]
+            bblock.insts[i-len(arglist):i+1-len(arglist)] = newinsts
 
         else:
-            break # No changes made
+            continue # No change, continue scanning basic blcok
 
-        change = True
+        return True
 
-    return change
+    return False
 
 def _get_jump(bblock):
     jump = bblock.insts[-1]
@@ -502,70 +495,56 @@ def _bblock_flow(bblocks):
     #             |---------------------|        <- unconditional jump to end
     # We only care about the end block for checking that everything does end up
     # there. The other three blocks end up 'consumed' by a BCIf object.
-    change = False
-    while True:
+    for i in range(len(bblocks)):
+        if len(bblocks[i:i+4]) < 4:
+            continue
+        jump0 = _get_jump(bblocks[i+0])
+        jump1 = _get_jump(bblocks[i+1])
+        jump2 = _get_jump(bblocks[i+2])
+        if jump0 is None or jump0.on is None: continue
+        if jump1 is None or jump1.on is not None: continue
+        if jump2 is not None: continue
+        if jump0.targetloc is not bblocks[i+2]: continue
+        if jump1.targetloc is not bblocks[i+3]: continue
+        if any([
+                isinstance(inst, Inst) for inst in
+                bblocks[i+1].insts + bblocks[i+2].insts
+                ]):
+            continue
+        targets = [target for target in [
+            (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
+            for src_bblock in bblocks
+        ] if target is not None]
+        if targets.count(bblocks[i+1]) > 0: continue
+        if targets.count(bblocks[i+2]) > 1: continue
+        jumps = [bblocks[i+0].insts.pop(), bblocks[i+1].insts.pop()]
+        assert jumps == [jump0, jump1]
+        bblocks[i].insts.append(BCIf(jumps, bblocks[i+1:i+3]))
+        bblocks[i+1:i+3] = []
 
-        for i in range(len(bblocks)):
-            if len(bblocks[i:i+4]) < 4:
-                continue
-            jump0 = _get_jump(bblocks[i+0])
-            jump1 = _get_jump(bblocks[i+1])
-            jump2 = _get_jump(bblocks[i+2])
-            if jump0 is None or jump0.on is None: continue
-            if jump1 is None or jump1.on is not None: continue
-            if jump2 is not None: continue
-            if jump0.targetloc is not bblocks[i+2]: continue
-            if jump1.targetloc is not bblocks[i+3]: continue
-            if any([
-                    isinstance(inst, Inst) for inst in
-                    bblocks[i+1].insts + bblocks[i+2].insts
-                    ]):
-                continue
-            targets = [target for target in [
-                (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
-                for src_bblock in bblocks
-            ] if target is not None]
-            if targets.count(bblocks[i+1]) > 0: continue
-            if targets.count(bblocks[i+2]) > 1: continue
-            jumps = [bblocks[i+0].insts.pop(), bblocks[i+1].insts.pop()]
-            assert jumps == [jump0, jump1]
-            bblocks[i].insts.append(BCIf(jumps, bblocks[i+1:i+3]))
-            bblocks[i+1:i+3] = []
-            break
+        return True
 
-        else:
-            break
-
-        change = True
-
-    return change
+    return False
 
 def _bblock_join(bblocks):
-    change = False
-    while True:
+    for i in range(len(bblocks)):
+        if len(bblocks[i:i+2]) < 2:
+            continue
+        bblock1, bblock2 = bblocks[i:i+2]
+        if _get_jump(bblock1) is not None:
+            continue
+        targets = [target for target in [
+            (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
+            for src_bblock in bblocks
+        ] if target is not None]
+        if bblock1 in targets or bblock2 in targets:
+            continue
+        bblock1.insts.extend(bblock2.insts)
+        bblocks[i+1:i+2] = []
 
-        for i in range(len(bblocks)):
-            if len(bblocks[i:i+2]) < 2:
-                continue
-            bblock1, bblock2 = bblocks[i:i+2]
-            if _get_jump(bblock1) is not None:
-                continue
-            targets = [target for target in [
-                (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
-                for src_bblock in bblocks
-            ] if target is not None]
-            if bblock1 in targets or bblock2 in targets:
-                continue
-            bblock1.insts.extend(bblock2.insts)
-            bblocks[i+1:i+2] = []
-            break
+        return True
 
-        else:
-            break
-
-        change = True
-
-    return change
+    return False
 
 def decompile(bc):
     """
