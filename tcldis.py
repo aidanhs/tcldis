@@ -128,7 +128,7 @@ class BCLiteral(BCValue):
     def fmt(self):
         val = self.value
         if val == '': return '{}'
-        if not any([c in val for c in '[]{}""\f\r\n\t\v ']):
+        if not any([c in val for c in '$[]{}""\f\r\n\t\v ']):
             return val
 
         # Can't use simple case, go the hard route
@@ -158,6 +158,7 @@ class BCLiteral(BCValue):
                 .replace('"', '\\"')
                 .replace('[', '\\[')
                 .replace(']', '\\]')
+                .replace('$', '\\$')
             )
             val = '"' + val + '"'
         else:
