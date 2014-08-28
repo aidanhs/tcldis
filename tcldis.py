@@ -209,6 +209,18 @@ class BCProcCall(BCValue):
             cmd = '[' + cmd + ']'
         return cmd
 
+class BCSet(BCProcCall):
+    def __init__(self, *args, **kwargs):
+        super(BCProcCall, self).__init__(*args, **kwargs)
+        assert len(self.value) == 2
+    def __repr__(self):
+        return 'BCSet(%s)' % (self.value,)
+    def fmt(self):
+        cmd = 'set %s %s' % tuple([v.fmt() for v in self.value])
+        if self.stack():
+            cmd = '[' + cmd + ']'
+        return cmd
+
 # This one is odd. inst.ops[0] is the index to the locals table, kv[0]
 # is namespace::value, or value if looking at the same namespace (i.e.
 # most of the time). For now we only handle the case where they're both
@@ -517,11 +529,11 @@ def _inst_reductions():
         'loadScalar1': [[N(0)], lambda inst, kv: BCVarRef(inst, [lit(inst.ops[0])])],
         'loadArray1': [[N(1)], lambda inst, kv: BCArrayRef(inst, [lit(inst.ops[0]), kv[0]])],
         # Variable sets
-        'storeStk': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])],
-        'storeScalarStk': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), kv[0], kv[1]])],
-        'storeArrayStk': [[N(3)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, kv[:2]), kv[2]])],
-        'storeScalar1': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('set'), lit(inst.ops[0]), kv[0]])],
-        'storeArray1': [[N(2)], lambda inst, kv: BCProcCall(inst, [lit('set'), BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])],
+        'storeStk': [[N(2)], BCSet],
+        'storeScalarStk': [[N(2)], BCSet],
+        'storeArrayStk': [[N(3)], lambda inst, kv: BCSet(inst, [BCArrayElt(None, kv[:2]), kv[2]])],
+        'storeScalar1': [[N(1)], lambda inst, kv: BCSet(inst, [lit(inst.ops[0]), kv[0]])],
+        'storeArray1': [[N(2)], lambda inst, kv: BCSet(inst, [BCArrayElt(None, [lit(inst.ops[0]), kv[0]]), kv[1]])],
         # Expressions
         'gt': [[N(2)], BCExpr],
         'lt': [[N(2)], BCExpr],
