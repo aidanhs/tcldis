@@ -20,11 +20,11 @@ cases.append(('list2', 'puts [list $a b c]\n')) # **
 cases.append(('expr', 'puts [expr {$a > 1}]\n')) # **
 
 cases.append(('return', 'return 15\n')) # **
-#cases.append(('if', '''\
-#if {$a} {
-#\tputs a
-#}
-#''')) # **
+cases.append(('if', '''\
+if {$a} {
+\tputs a
+}
+''')) # **
 cases.append(('if_else', '''\
 if {$a} {
 \tputs a

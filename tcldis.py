@@ -339,10 +339,14 @@ class BCIf(BCProcCall):
         cmd = (
             'if {%s} {' +
             '\n\t' + self.value[0].fmt().replace('\n', '\n\t') + '\n' +
-            '} else {' +
-            '\n\t' + self.value[1].fmt().replace('\n', '\n\t') + '\n' +
             '}'
         ) % (conditionstr,)
+        if len(self.value[1].insts) > 0:
+            cmd += (
+                ' else {' +
+                '\n\t' + self.value[1].fmt().replace('\n', '\n\t') + '\n' +
+                '}'
+            )
         if self.stack():
             cmd = '[' + cmd + ']'
         return cmd
