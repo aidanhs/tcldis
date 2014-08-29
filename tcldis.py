@@ -339,6 +339,40 @@ class BCIf(BCProcCall):
             cmd = '[' + cmd + ']'
         return cmd
 
+class BCCatch(BCProcCall):
+    def __init__(self, *args, **kwargs):
+        super(BCCatch, self).__init__(*args, **kwargs)
+        assert len(self.value) == 3
+        assert all([isinstance(v, BBlock) for v in self.value])
+        begin, middle, end = self.value
+        assert all([
+            len(begin.insts) >= 4, # beginCatch4, code, return code, jump
+            len(middle.insts) == 4,
+            len(end.insts) == 1,
+        ])
+        assert all([
+            isinstance(begin.insts[1], BCSet),
+            isinstance(begin.insts[-2], BCLiteral),
+            isinstance(begin.insts[-1], BCJump),
+        ])
+        assert all([
+            middle.insts[0].name == 'pushResult',
+            middle.insts[1].name == 'storeScalar1',
+            middle.insts[2].name == 'pop',
+            middle.insts[3].name == 'pushReturnCode',
+        ])
+        assert begin.insts[1].value[0].fmt() == middle.insts[1].ops[0]
+        begin.insts.pop(0)
+        begin.insts.pop(-1)
+        begin.insts.pop(-1)
+    def __repr__(self):
+        return 'BCCatch(%s)' % (self.value,)
+    def fmt(self):
+        catchblock = self.value[0].fmt()
+        cmd = 'catch {%s} %s' % (catchblock, self.value[0].insts[0].value[0].fmt())
+        if self.stack():
+            cmd = '[' + cmd + ']'
+        return cmd
 
 ####################################################################
 # My own representation of anything that cannot be used as a value #
@@ -664,6 +698,33 @@ def _bblock_flow(bblocks):
         bblocks[i+1:i+3] = []
 
         return True
+
+    # Recognise a catch
+    # The overall structure consists of 3 basic blocks, arranged like so:
+    # [beginCatch+code]   [oncatch]   [endCatch]
+    #        |----------------------------^    <- unconditional jump to endCatch
+    # The oncatch block is a series of instructions for handling when the code
+    # throws an exception - note there is no direct execution path to them. We
+    # make a number of assertions about them in case the bytecode compiler ever
+    # does something unexpected with them. All blocks are 'consumed' and replaced
+    # with a single BCCatch.
+    for i in range(len(bblocks)):
+        if len(bblocks[i:i+3]) < 3:
+            continue
+        begin = bblocks[i+0]
+        middle = bblocks[i+1]
+        end = bblocks[i+2]
+        if not _is_catch_begin(begin): continue
+        if not _is_catch_end(end): continue
+        assert not (_is_catch_end(begin) or _is_catch_begin(end))
+        assert not (_is_catch_end(middle) or _is_catch_begin(middle))
+        if any([isinstance(inst, Inst) for inst in begin.insts[1:]]):
+            continue
+        # Do some trickery here because we need to consume the begin bblock
+        # but retain the original object as a reference for jump targets.
+        begin = copy.copy(begin)
+        bblocks[i].insts = [BCCatch(None, [begin, middle, end])]
+        bblocks[i+1:i+3] = []
 
     return False
 
