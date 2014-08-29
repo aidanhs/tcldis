@@ -726,6 +726,7 @@ def _bblock_flow(bblocks):
         begin = copy.copy(begin)
         bblocks[i].insts = [BCCatch(None, [begin, middle, end])]
         bblocks[i+1:i+3] = []
+        return True
 
     return False
 
