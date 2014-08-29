@@ -742,6 +742,10 @@ def _bblock_join(bblocks):
         # bblock boundaries, do not join them.
         if _get_jump(bblock1) is not None:
             continue
+        # Unreduced jumps
+        if any([isinstance(inst, Inst) and inst.name in JUMP_INSTRUCTIONS
+                for inst in bblock1.insts]):
+            continue
         if bblock2 in targets:
             continue
         if _is_catch_end(bblock1):
