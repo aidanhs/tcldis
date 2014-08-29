@@ -48,6 +48,14 @@ class BC(object):
         self._locals = bclocals
         self._auxs = bcauxs
         self._pc = 0
+    def __repr__(self):
+        return 'BC(%s,%s,%s,%s,%s)' % tuple([repr(v) for v in [
+            self._bytecode,
+            self._literals,
+            self._locals,
+            self._auxs,
+            self._pc
+        ]])
     def __len__(self):
         return len(self._bytecode) - self._pc
     def literal(self, n):
