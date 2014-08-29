@@ -772,8 +772,8 @@ def decompile(bc):
     while change:
         change = False
         change = any([_bblock_reduce(bc, bblock) for bblock in bblocks])
-        change = change or _bblock_flow(bblocks)
         change = change or _bblock_join(bblocks)
+        change = change or _bblock_flow(bblocks)
     outstr = ''
     for bblock in bblocks:
         outstr += bblock.fmt()
