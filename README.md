@@ -1,7 +1,7 @@
 tcldis
 ======
 
-This is a Python module to decompile Tcl bytecode, targeting Tcl >= 8.5 and
+This is a Python module to decompile Tcl bytecode, targeting Tcl 8.5 and
 Python 2.6 - 2.7.
 
 It is best used with reference to tclCompile.{c,h} from the Tcl source.
