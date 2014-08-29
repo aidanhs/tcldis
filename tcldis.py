@@ -468,13 +468,10 @@ def _bblock_create(insts):
                     instbeforeidx += 1
                 instbefore = insts[instbeforeidx]
                 ends.add(instbefore.loc)
-        elif inst.name == 'beginCatch4':
+        elif inst.name in ('beginCatch4', 'endCatch'):
             starts.add(inst.loc)
             if inst.loc != 0:
                 ends.add(insts[i-1].loc)
-        elif inst.name == 'endCatch':
-            ends.add(inst.loc)
-            newstart = True
     ends.add(insts[-1].loc)
     # Create the basic blocks
     assert len(starts) == len(ends)
@@ -655,7 +652,7 @@ def _is_catch_begin(bblock):
     return catch.name == 'beginCatch4'
 def _is_catch_end(bblock):
     if len(bblock.insts) == 0: return False
-    catch = bblock.insts[-1]
+    catch = bblock.insts[0]
     if not isinstance(catch, Inst): return False
     return catch.name == 'endCatch'
 
@@ -724,8 +721,10 @@ def _bblock_flow(bblocks):
         # Do some trickery here because we need to consume the begin bblock
         # but retain the original object as a reference for jump targets.
         begin = copy.copy(begin)
-        bblocks[i].insts = [BCCatch(None, [begin, middle, end])]
-        bblocks[i+1:i+3] = []
+        endcatchinst = end.insts.pop(0)
+        endcatch = BBlock([endcatchinst], endcatchinst.loc)
+        bblocks[i].insts = [BCCatch(None, [begin, middle, endcatch])]
+        bblocks[i+1:i+2] = []
         return True
 
     return False
@@ -749,9 +748,9 @@ def _bblock_join(bblocks):
             continue
         if bblock2 in targets:
             continue
-        if _is_catch_end(bblock1):
-            continue
         if _is_catch_begin(bblock2):
+            continue
+        if _is_catch_end(bblock2):
             continue
         bblock1.insts.extend(bblock2.insts)
         bblocks[i+1:i+2] = []
