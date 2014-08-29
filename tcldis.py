@@ -373,7 +373,10 @@ class BCCatch(BCProcCall):
             middle.insts[2].name == 'pop',
             middle.insts[3].name == 'pushReturnCode',
         ])
-        assert begin.insts[1].value[0].fmt() == middle.insts[1].ops[0]
+        assert begin.insts[-3].value[0].fmt() == middle.insts[1].ops[0]
+        assert isinstance(begin.insts[-3], BCSet)
+        begin.insts[-3] = begin.insts[-3].value[1]
+        begin.insts[-3].stack(-1)
         begin.insts.pop(0)
         begin.insts.pop(-1)
         begin.insts.pop(-1)
@@ -381,7 +384,8 @@ class BCCatch(BCProcCall):
         return 'BCCatch(%s)' % (self.value,)
     def fmt(self):
         catchblock = self.value[0].fmt()
-        cmd = 'catch {%s} %s' % (catchblock, self.value[0].insts[0].value[0].fmt())
+        varname = self.value[1].insts[1].ops[0]
+        cmd = 'catch {%s} %s' % (catchblock, varname)
         if self.stack():
             cmd = '[' + cmd + ']'
         return cmd

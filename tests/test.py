@@ -97,6 +97,34 @@ class TestTclProc(unittest.TestCase):
         tclpy.eval(proctcl)
         self.assertEqual(tcl, tcldis.decompile(tcldis.getbc(proc_name='p')))
 
+# For bits of bytecode I can't reproduce from tcl, but need to be decompilable
+class TestTclBC(unittest.TestCase):
+    def assertTclEqual(self, case):
+        bc, tcl = case
+        self.assertEqual(tcl, tcldis.decompile(bc))
+
+    def test_catch(self):
+        self.assertTclEqual((
+            tcldis.BC(
+                bytearray(
+                    b'E\x00\x00\x00\x00i\x00\x00\x00\x13\x00\x00\x00\x01\x01\x03' +
+                    b'\x01\x04\n\x00\x06\x03\x11\x03\x11\x02\x03\x01\x05"\x07G' +
+                    b'\x11\x02\x03HF@&\x19\x01\x06\x01\x07\x01\x08\x06\x03\x03i' +
+                    b'\x00\x00\x00\x0c\x00\x00\x00\x01\x01\x01\x00"\x04\x01\x01\x03'
+                ),
+                ['','','name','run_me','-arg','0','someproc','-with-uplevel','$msg'],
+                ['name','','msg','out'],
+                []
+            ),
+            dedent('''\
+                if {[catch {set out [run_me -arg $name]} msg]} {
+                	someproc -with-uplevel {$msg}
+                	return {}
+                }
+                '''
+            )
+        ))
+
 def setupcase(test_class, name, case):
     setattr(
         test_class,
