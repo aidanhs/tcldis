@@ -374,7 +374,6 @@ class BCCatch(BCProcCall):
         ]))
         # Nail down the details and move things around to out liking
         assert begin.insts[-3].value[0].fmt() == middle.insts[1].ops[0]
-        assert isinstance(begin.insts[-3], BCSet)
         begin.insts[-3] = begin.insts[-3].value[1]
         begin.insts[-3].stack(-1)
         begin.insts.pop(0)
