@@ -358,12 +358,12 @@ class BCCatch(BCProcCall):
         assert all([isinstance(v, BBlock) for v in self.value])
         begin, middle, end = self.value
         # Make sure we recognise the overall structure of this catch
-        assert (all([
+        assert (all([ # First form of a catch
             len(begin.insts) >= 4, # beginCatch4, code, return code, jump
             len(middle.insts) == 4,
             len(end.insts) == 1,
         ]) and all([
-            isinstance(begin.insts[1], BCSet),
+            isinstance(begin.insts[-3], BCSet),
             isinstance(begin.insts[-2], BCLiteral),
             isinstance(begin.insts[-1], BCJump),
         ]) and all([
@@ -371,10 +371,29 @@ class BCCatch(BCProcCall):
             middle.insts[1].name == 'storeScalar1',
             middle.insts[2].name == 'pop',
             middle.insts[3].name == 'pushReturnCode',
+            end.insts[0].name    == 'endCatch',
+        ])) or (all([ # This is the second form a catch may take
+            len(begin.insts) >= 4, # beginCatch4, code, return code, jump
+            len(middle.insts) == 2,
+            len(end.insts) == 4,
+        ]) and all([
+            isinstance(begin.insts[-3], BCProcCall),
+            isinstance(begin.insts[-2], BCLiteral),
+            isinstance(begin.insts[-1], BCJump),
+        ]) and all([
+            middle.insts[0].name == 'pushResult',
+            middle.insts[1].name == 'pushReturnCode',
+            end.insts[0].name    == 'endCatch',
+            end.insts[1].name    == 'reverse', end.insts[1].ops[0] == 2,
+            end.insts[2].name    == 'storeScalar1',
+            end.insts[3].name    == 'pop',
         ]))
         # Nail down the details and move things around to out liking
-        assert begin.insts[-3].value[0].fmt() == middle.insts[1].ops[0]
-        begin.insts[-3] = begin.insts[-3].value[1]
+        if len(end.insts) == 1:
+            assert begin.insts[-3].value[0].fmt() == middle.insts[1].ops[0]
+            begin.insts[-3] = begin.insts[-3].value[1]
+        else:
+            end.insts[2] = end.insts[2].ops[0]
         begin.insts[-3].stack(-1)
         begin.insts.pop(0)
         begin.insts.pop(-1)
@@ -383,7 +402,10 @@ class BCCatch(BCProcCall):
         return 'BCCatch(%s)' % (self.value,)
     def fmt(self):
         catchblock = self.value[0].fmt()
-        varname = self.value[1].insts[1].ops[0]
+        if len(self.value[2].insts) == 1:
+            varname = self.value[1].insts[1].ops[0]
+        else:
+            varname = self.value[2].insts[2]
         cmd = 'catch {%s} %s' % (catchblock, varname)
         if self.stack():
             cmd = '[' + cmd + ']'
@@ -738,6 +760,17 @@ def _bblock_flow(bblocks):
         begin = copy.copy(begin)
         endcatchinst = end.insts.pop(0)
         endcatch = BBlock([endcatchinst], endcatchinst.loc)
+        if (len(end.insts) > 2 and
+                isinstance(end.insts[0], Inst) and
+                isinstance(end.insts[1], Inst) and
+                isinstance(end.insts[2], Inst) and
+                end.insts[0].name == 'reverse' and
+                end.insts[1].name == 'storeScalar1' and
+                end.insts[2].name == 'pop'
+            ):
+            endcatch.insts.append(end.insts.pop(0))
+            endcatch.insts.append(end.insts.pop(0))
+            endcatch.insts.append(end.insts.pop(0))
         bblocks[i].insts = [BCCatch(None, [begin, middle, endcatch])]
         bblocks[i+1:i+2] = []
         return True

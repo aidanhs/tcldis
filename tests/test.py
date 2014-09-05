@@ -18,6 +18,9 @@ cases.append(('variable', 'variable x\n')) # **
 cases.append(('list2', 'puts [list $a b c]\n')) # **
 
 cases.append(('expr', 'puts [expr {$a > 1}]\n')) # **
+cases.append(('catch', '''\
+catch {my_bad_proc a b} msg
+''')) # **
 
 cases.append(('return', 'return 15\n')) # **
 cases.append(('if', '''\
