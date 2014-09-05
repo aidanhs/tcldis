@@ -357,22 +357,22 @@ class BCCatch(BCProcCall):
         assert len(self.value) == 3
         assert all([isinstance(v, BBlock) for v in self.value])
         begin, middle, end = self.value
-        assert all([
+        # Make sure we recognise the overall structure of this catch
+        assert (all([
             len(begin.insts) >= 4, # beginCatch4, code, return code, jump
             len(middle.insts) == 4,
             len(end.insts) == 1,
-        ])
-        assert all([
+        ]) and all([
             isinstance(begin.insts[1], BCSet),
             isinstance(begin.insts[-2], BCLiteral),
             isinstance(begin.insts[-1], BCJump),
-        ])
-        assert all([
+        ]) and all([
             middle.insts[0].name == 'pushResult',
             middle.insts[1].name == 'storeScalar1',
             middle.insts[2].name == 'pop',
             middle.insts[3].name == 'pushReturnCode',
-        ])
+        ]))
+        # Nail down the details and move things around to out liking
         assert begin.insts[-3].value[0].fmt() == middle.insts[1].ops[0]
         assert isinstance(begin.insts[-3], BCSet)
         begin.insts[-3] = begin.insts[-3].value[1]
