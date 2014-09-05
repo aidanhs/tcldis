@@ -90,6 +90,16 @@ foreach {a b} {1 2 3 4} {
 # TODO: dict for **
 # TODO: expr **
 
+cases.append(('if_nested_catch', '''\
+if {$a} {
+\tif {[catch {xx $b} c]} {
+\t\tputs b
+\t}
+} else {
+\tputs b
+}
+''')) # **
+
 class TestTclScript(unittest.TestCase):
     def assertTclEqual(self, tcl):
         self.assertEqual(tcl, tcldis.decompile(tcldis.getbc(tcl)))
