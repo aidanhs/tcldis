@@ -878,6 +878,17 @@ def _bblock_flow(bblocks):
     return False
 
 def _bblock_join(bblocks):
+
+    # Remove empty unused blocks
+    for i, bblock in enumerate(bblocks):
+        if len(bblock.insts) > 0: continue
+        targets = _get_targets(bblocks)
+        if bblock in targets: continue
+        bblocks[i:i+1] = []
+
+        return True
+
+    # Join together blocks if possible
     for i in range(len(bblocks)):
         if len(bblocks[i:i+2]) < 2:
             continue
