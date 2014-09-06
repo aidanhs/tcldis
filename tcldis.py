@@ -932,6 +932,8 @@ def decompile(bc):
         change = change or _bblock_flow(bblocks)
     outstr = ''
     for bblock in bblocks:
+        #outstr += '===========%s\n' % (bblock)
         outstr += bblock.fmt()
         outstr += '\n'
+    #print(outstr)
     return outstr
