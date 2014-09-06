@@ -413,6 +413,45 @@ class BCCatch(BCProcCall):
             cmd = '[' + cmd + ']'
         return cmd
 
+class BCForeach(BCProcCall):
+    def __init__(self, *args, **kwargs):
+        super(BCForeach, self).__init__(*args, **kwargs)
+        assert len(self.value) == 4
+        assert all([isinstance(v, BBlock) for v in self.value[:3]])
+        begin, step, code, lit = self.value
+        # Make sure we recognise the overall structure of foreach
+        assert (all([
+            len(begin.insts) == 2, # list temp var, foreach start
+            len(step.insts) == 2, # foreach step, jumpfalse
+            len(code.insts) > 1,
+        ]) and all([
+            isinstance(begin.insts[0], BCSet),
+            isinstance(begin.insts[1], Inst),
+            isinstance(step.insts[0], Inst),
+            isinstance(step.insts[1], Inst),
+            isinstance(code.insts[-1], BCJump),
+            isinstance(lit, Inst) or lit is None,
+        ]) and all([
+            begin.insts[1].name == 'foreach_start4',
+            step.insts[0].name == 'foreach_step4',
+            step.insts[1].name == 'jumpFalse1',
+        ]))
+        # Nail down the details and move things around to our liking
+        code.insts.pop()
+        if lit is None:
+            self.stack(-1)
+        else:
+            assert lit.value == ''
+    def __repr__(self):
+        return 'BCForeach(%s)' % (self.value,)
+    def fmt(self):
+        feblock = '\n\t' + self.value[2].fmt().replace('\n', '\n\t') + '\n'
+        felist = self.value[0].insts[0].value[1].fmt()
+        cmd = 'foreach {???} %s {%s}' % (felist, feblock)
+        if self.stack():
+            cmd = '[' + cmd + ']'
+        return cmd
+
 ####################################################################
 # My own representation of anything that cannot be used as a value #
 ####################################################################
@@ -777,6 +816,46 @@ def _bblock_flow(bblocks):
             endcatch.insts.append(end.insts.pop(0))
         bblocks[i].insts = [BCCatch(None, [begin, middle, endcatch])]
         bblocks[i+1:i+2] = []
+        return True
+
+    # Recognise a foreach.
+    # The overall structure consists of 4 basic blocks, arranged like so:
+    # [fe start] -> [fe step]  [fe code] -> [end (unrelated code to fe)]
+    #                  ^  |--------|-----------^   <- conditional jump to end
+    #                  |-----------|               <- unconditional jump to fe step
+    # We only care about the end block for checking that everything does end up
+    # there. The other three blocks end up 'consumed' by a BCForEach object.
+    # If possible, we try and consume the BCLiteral sitting in the first instruction of
+    # end, though it may already have been consumed by a return call.
+    for i in range(len(bblocks)):
+        if len(bblocks[i:i+4]) < 4:
+            continue
+        jump0 = _get_jump(bblocks[i+0])
+        jump1 = bblocks[i+1].insts[-1]
+        jump2 = _get_jump(bblocks[i+2])
+        if jump0 is not None: continue
+        # Unreduced because jumps don't know how to consume foreach_step
+        if not isinstance(jump1, Inst) or jump1.name != 'jumpFalse1': continue
+        if jump2 is None or jump2.on is not None: continue
+        if jump1.targetloc is not bblocks[i+3]: continue
+        if jump2.targetloc is not bblocks[i+1]: continue
+        if any([isinstance(inst, Inst) for inst in bblocks[i+2].insts]): continue
+        if isinstance(bblocks[i+3].insts[0], Inst): continue
+        targets = [target for target in [
+            (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
+            for src_bblock in bblocks
+        ] if target is not None]
+        if targets.count(bblocks[i+1]) > 1: continue
+        if targets.count(bblocks[i+2]) > 0: continue
+        if targets.count(bblocks[i+3]) > 1: continue
+        # Do some trickery here because we need to consume the begin bblock
+        # but retain the original object as a reference for jump targets.
+        begin = copy.copy(bblocks[i])
+        end = None
+        if isinstance(bblocks[i+3].insts[0], BCLiteral):
+            end = bblocks[i+1].pop(0)
+        bblocks[i].insts = [BCForeach(None, [begin] + bblocks[i+1:i+3] + [end])]
+        bblocks[i+1:i+3] = []
         return True
 
     return False
