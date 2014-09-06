@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import struct
 import copy
+import itertools
 
 import _tcldis
 printbc = _tcldis.printbc
@@ -729,6 +730,17 @@ def _bblock_reduce(bc, bblock):
 
     return False
 
+def _get_targets(bblocks):
+    targets = [target for target in [
+        (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
+        for src_bblock in bblocks
+    ] if target is not None]
+    inst_targets = [bblock.insts for bblock in bblocks]
+    inst_targets = [i for i in itertools.chain(*inst_targets)]
+    inst_targets = [i for i in inst_targets if isinstance(i, Inst)]
+    inst_targets = [i for i in inst_targets if i.name in JUMP_INSTRUCTIONS]
+    inst_targets = [i.targetloc for i in inst_targets]
+    return targets + inst_targets
 def _get_jump(bblock):
     if len(bblock.insts) == 0: return None
     jump = bblock.insts[-1]
@@ -773,10 +785,7 @@ def _bblock_flow(bblocks):
                 bblocks[i+1].insts + bblocks[i+2].insts
                 ]):
             continue
-        targets = [target for target in [
-            (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
-            for src_bblock in bblocks
-        ] if target is not None]
+        targets = _get_targets(bblocks)
         if targets.count(bblocks[i+1]) > 0: continue
         if targets.count(bblocks[i+2]) > 1: continue
         jumps = [bblocks[i+0].insts.pop(), bblocks[i+1].insts.pop()]
@@ -852,10 +861,7 @@ def _bblock_flow(bblocks):
         if jump2.targetloc is not bblocks[i+1]: continue
         if any([isinstance(inst, Inst) for inst in bblocks[i+2].insts]): continue
         if isinstance(bblocks[i+3].insts[0], Inst): continue
-        targets = [target for target in [
-            (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
-            for src_bblock in bblocks
-        ] if target is not None]
+        targets = _get_targets(bblocks)
         if targets.count(bblocks[i+1]) > 1: continue
         if targets.count(bblocks[i+2]) > 0: continue
         if targets.count(bblocks[i+3]) > 1: continue
@@ -876,10 +882,7 @@ def _bblock_join(bblocks):
         if len(bblocks[i:i+2]) < 2:
             continue
         bblock1, bblock2 = bblocks[i:i+2]
-        targets = [target for target in [
-            (lambda jump: jump and jump.targetloc)(_get_jump(src_bblock))
-            for src_bblock in bblocks
-        ] if target is not None]
+        targets = _get_targets(bblocks)
         # If the end of bblock1 or the beginning of bblock2 should remain as
         # bblock boundaries, do not join them.
         if _get_jump(bblock1) is not None:
