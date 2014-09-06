@@ -390,7 +390,7 @@ class BCCatch(BCProcCall):
             end.insts[2].name    == 'storeScalar1',
             end.insts[3].name    == 'pop',
         ]))
-        # Nail down the details and move things around to out liking
+        # Nail down the details and move things around to our liking
         if len(end.insts) == 1:
             assert begin.insts[-3].value[0].fmt() == middle.insts[1].ops[0]
             begin.insts[-3] = begin.insts[-3].value[1]
