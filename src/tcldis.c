@@ -204,7 +204,41 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 
 		if (strcmp(tclAux->type->name, "ForeachInfo") == 0) {
 			ForeachInfo *tclData = (ForeachInfo *)tclAux->clientData;
-			pTclAuxDet = PyInt_FromLong(tclData->numLists);
+			int listIdx, varIdx;
+			PyObject *pTclVarLists, *pTclVarList, *pTclVar;
+			ForeachVarList* tclVarList;
+
+			/*
+			 * foreach takes N list of ?varlist vallist? pairs
+			 * The aux data contains a list of lists of indexes into
+			 * the proc local variable array, corresponding to the
+			 * indexes of variables used in each list
+			 */
+			pTclVarLists = PyList_New(0);
+			for (listIdx = 0; listIdx < tclData->numLists; listIdx++) {
+				if (pTclVarLists == NULL)
+					break;
+				pTclVarList = PyList_New(0);
+				tclVarList = tclData->varLists[listIdx];
+
+				for (varIdx = 0; varIdx < tclVarList->numVars; varIdx++) {
+					if (pTclVarList == NULL)
+						break;
+					pTclVar = PyInt_FromLong(tclVarList->varIndexes[varIdx]);
+
+					if (pTclVar == NULL || PyList_Append(pTclVarList, pTclVar) != 0) {
+						Py_CLEAR(pTclVarList);
+						continue;
+					}
+				}
+
+				if (pTclVarList == NULL || PyList_Append(pTclVarLists, pTclVarList) != 0) {
+					Py_CLEAR(pTclVarLists);
+					continue;
+				}
+			}
+
+			pTclAuxDet = pTclVarLists;
 		} else {
 			pTclAuxDet = Py_None;
 			Py_INCREF(Py_None);
