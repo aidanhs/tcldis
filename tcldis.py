@@ -702,7 +702,7 @@ def _bblock_flow(bblocks):
     # execution branches with a value. TODO: this is an implementation detail
     # and should be handled more generically.
     # The overall structure consists of 4 basic blocks, arranged like so:
-    # [if] -> [ifcode]  [elsecode] -> [end]
+    # [if] -> [ifcode]  [elsecode] -> [end (unrelated code after if)]
     #   |---------|----------^          ^        <- conditional jump to else
     #             |---------------------|        <- unconditional jump to end
     # We only care about the end block for checking that everything does end up
@@ -738,13 +738,15 @@ def _bblock_flow(bblocks):
 
     # Recognise a catch
     # The overall structure consists of 3 basic blocks, arranged like so:
-    # [beginCatch+code]   [oncatch]   [endCatch]
+    # [beginCatch+code]   [oncatch]   [endCatch+unrelated code after catch]
     #        |----------------------------^    <- unconditional jump to endCatch
     # The oncatch block is a series of instructions for handling when the code
     # throws an exception - note there is no direct execution path to them. We
     # make a number of assertions about them in case the bytecode compiler ever
     # does something unexpected with them. All blocks are 'consumed' and replaced
     # with a single BCCatch.
+    # TODO: because we steal instructions from the endCatch block, the bblock 'loc'
+    # is no longer correct!
     for i in range(len(bblocks)):
         if len(bblocks[i:i+3]) < 3:
             continue
