@@ -191,27 +191,33 @@ tcldis_getbc(PyObject *self, PyObject *args, PyObject *kwargs)
 	 * per type.
 	 */
 	PyObject *pTclAuxs = PyList_New(0);
-	PyObject *pTclAux;
+	PyObject *pTclAux, *pTclAuxType, *pTclAuxDet;
 	int numAuxs = bc->numAuxDataItems;
 	AuxData *tclAux;
 	if (pTclAuxs == NULL)
 		numAuxs = 0;
-
-	/*int pcOffset = 0;
-	Tcl_Obj *tBuf;*/
-
 	for (i = 0; i < numAuxs; i++) {
+		pTclAuxType = NULL;
+		pTclAuxDet = NULL;
+		pTclAux = NULL;
 		tclAux = &bc->auxDataArrayPtr[i];
-		/*if (tclAux->type->printProc == NULL) {*/
-			pTclAux = PyString_FromString(tclAux->type->name);
-		/*} else {
-			tBuf = Tcl_NewObj();
-			Tcl_IncrRefCount(tBuf);
-			tclAux->type->printProc(tclAux->clientData, tBuf, bc, pcOffset);
-			pTclAux = PyString_FromString(Tcl_GetString(tBuf));
-			Tcl_DecrRefCount(tBuf);
-		}*/
+
+		if (strcmp(tclAux->type->name, "ForeachInfo") == 0) {
+			ForeachInfo *tclData = (ForeachInfo *)tclAux->clientData;
+			pTclAuxDet = PyInt_FromLong(tclData->numLists);
+		} else {
+			pTclAuxDet = Py_None;
+			Py_INCREF(Py_None);
+		}
+
+		if (pTclAuxDet != NULL)
+			pTclAuxType = PyString_FromString(tclAux->type->name);
+		if (pTclAuxType != NULL && pTclAuxDet != NULL)
+			pTclAux = PyTuple_Pack(2, pTclAuxType, pTclAuxDet);
+
 		if (pTclAux == NULL || PyList_Append(pTclAuxs, pTclAux) != 0) {
+			Py_CLEAR(pTclAuxType);
+			Py_CLEAR(pTclAuxDet);
 			Py_CLEAR(pTclAux);
 			Py_CLEAR(pTclAuxs);
 			break;
