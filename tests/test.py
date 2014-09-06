@@ -96,8 +96,9 @@ if {$a} {
 \tif {[catch {xx $b} c]} {
 \t\tputs b
 \t}
+\tputs x
 } else {
-\tputs b
+\tputs c
 }
 ''')) # **
 
