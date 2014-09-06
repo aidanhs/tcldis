@@ -870,7 +870,7 @@ def _bblock_flow(bblocks):
         begin = copy.copy(bblocks[i])
         end = None
         if isinstance(bblocks[i+3].insts[0], BCLiteral):
-            end = bblocks[i+1].insts.pop(0)
+            end = bblocks[i+3].insts.pop(0)
         bblocks[i].insts = [BCForeach(None, [begin] + bblocks[i+1:i+3] + [end])]
         bblocks[i+1:i+3] = []
         return True
