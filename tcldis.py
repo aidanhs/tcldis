@@ -438,7 +438,7 @@ class BCForeach(BCProcCall):
             isinstance(step.insts[0], Inst),
             isinstance(step.insts[1], Inst),
             isinstance(code.insts[-1], BCJump),
-            isinstance(lit, Inst) or lit is None,
+            isinstance(lit, BCLiteral) or lit is None,
         ]) and all([
             begin.insts[1].name == 'foreach_start4',
             step.insts[0].name == 'foreach_step4',
