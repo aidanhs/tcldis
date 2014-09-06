@@ -94,6 +94,13 @@ class Inst(object):
                 self.ops.append(bc.local(getop(bytecode)))
             elif optype in ('AUX4'):
                 self.ops.append(bc.aux(getop(bytecode)))
+                auxtype, auxdata = self.ops[-1]
+                if auxtype == 'ForeachInfo':
+                    auxdata = [
+                        [bc.local(varidx) for varidx in varlist]
+                        for varlist in auxdata
+                    ]
+                self.ops[-1] = (auxtype, auxdata)
             else:
                 assert False
         # Note that this doesn't get printed on str() so we only see
@@ -437,6 +444,8 @@ class BCForeach(BCProcCall):
             step.insts[1].name == 'jumpFalse1',
         ]))
         # Nail down the details and move things around to our liking
+        assert begin.insts[1].ops[0] == step.insts[0].ops[0]
+        assert len(begin.insts[1].ops[0][1]) == 1
         code.insts.pop()
         if lit is None:
             self.stack(-1)
@@ -445,9 +454,11 @@ class BCForeach(BCProcCall):
     def __repr__(self):
         return 'BCForeach(%s)' % (self.value,)
     def fmt(self):
-        feblock = '\n\t' + self.value[2].fmt().replace('\n', '\n\t') + '\n'
+        # TODO: this is lazy
+        fevars = ' '.join(self.value[0].insts[1].ops[0][1][0])
         felist = self.value[0].insts[0].value[1].fmt()
-        cmd = 'foreach {???} %s {%s}' % (felist, feblock)
+        feblock = '\n\t' + self.value[2].fmt().replace('\n', '\n\t') + '\n'
+        cmd = 'foreach {%s} %s {%s}' % (fevars, felist, feblock)
         if self.stack():
             cmd = '[' + cmd + ']'
         return cmd
