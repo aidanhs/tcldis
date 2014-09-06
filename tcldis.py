@@ -867,11 +867,15 @@ def _bblock_flow(bblocks):
         if targets.count(bblocks[i+3]) > 1: continue
         # Do some trickery here because we need to consume the begin bblock
         # but retain the original object as a reference for jump targets.
-        begin = copy.copy(bblocks[i])
+        foreach_start = bblocks[i].insts.pop()
+        numvarlists = len(foreach_start.ops[0][1])
+        varlists = [bblocks[i].insts.pop() for i in range(numvarlists)]
+        # TODO: Location isn't actually correct...do we care?
+        begin = BBlock(varlists + [foreach_start], foreach_start.loc)
         end = None
         if isinstance(bblocks[i+3].insts[0], BCLiteral):
             end = bblocks[i+3].insts.pop(0)
-        bblocks[i].insts = [BCForeach(None, [begin] + bblocks[i+1:i+3] + [end])]
+        bblocks[i].insts.append(BCForeach(None, [begin] + bblocks[i+1:i+3] + [end]))
         bblocks[i+1:i+3] = []
         return True
 
