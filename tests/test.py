@@ -85,6 +85,7 @@ foreach {a b} {1 2 3 4} {
 	puts $a
 	puts $b
 }
+puts x
 ''')) # **
 
 # TODO: dict for **
@@ -147,7 +148,7 @@ def setupcase(test_class, name, case):
 
 for name, case in cases:
     setupcase(TestTclScript, name, case)
-    if name not in ('array_set', 'foreach'):
+    if name != 'array_set':
         setupcase(TestTclProc, name, case)
 
 if __name__ == '__main__':
