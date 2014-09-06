@@ -92,6 +92,8 @@ class Inst(object):
                 self.ops.append(getop(bytecode))
             elif optype in ('LVT1', 'LVT4'):
                 self.ops.append(bc.local(getop(bytecode)))
+            elif optype in ('AUX4'):
+                self.ops.append(bc.aux(getop(bytecode)))
             else:
                 assert False
         # Note that this doesn't get printed on str() so we only see
