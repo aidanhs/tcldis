@@ -249,7 +249,8 @@ class BCVariable(BCProcCall):
     def __init__(self, *args, **kwargs):
         super(BCVariable, self).__init__(*args, **kwargs)
         assert len(self.value) == 1
-        assert self.value[0].fmt() == self.inst.ops[0]
+        # self.value[0].fmt() is the fully qualified name, if appropriate
+        assert self.value[0].fmt().endswith(self.inst.ops[0])
     def __repr__(self):
         return 'BCVariable(%s)' % (self.value,)
     def fmt(self):
