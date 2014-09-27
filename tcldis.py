@@ -101,6 +101,8 @@ class Inst(object):
                         [bc.local(varidx) for varidx in varlist]
                         for varlist in auxdata
                     ]
+                else:
+                    assert False
                 self.ops[-1] = (auxtype, auxdata)
             else:
                 assert False
