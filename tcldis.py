@@ -587,6 +587,7 @@ def _bblock_create(insts):
                 inst.targetloc = bblock
                 break
         else:
+            # Ensure all jumps point to a bblock
             assert False
     return bblocks
 
