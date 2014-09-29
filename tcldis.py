@@ -3,6 +3,7 @@ from __future__ import print_function
 import struct
 import copy
 import itertools
+from collections import namedtuple
 
 import _tcldis
 printbc = _tcldis.printbc
@@ -79,23 +80,24 @@ class BC(object):
         return bc
 
 # Tcl bytecode instruction
-class Inst(object):
-    def __init__(self, bc, *args, **kwargs):
-        super(Inst, self).__init__(*args, **kwargs)
-        self.loc = bc.pc()
+InstTuple = namedtuple('InstTuple', ['loc', 'name', 'ops', 'targetloc'])
+class Inst(InstTuple):
+    def __new__(cls, bc):
+        d = {}
+        d['loc'] = bc.pc()
         bytecode = bc.get(INSTRUCTIONS[bc.peek1()]['num_bytes'])
         inst_type = INSTRUCTIONS[bytecode.pop(0)]
-        self.name = inst_type['name']
-        self.ops = []
+        d['name'] = inst_type['name']
+        ops = []
         for opnum in inst_type['operands']:
             optype, getop = OPERANDS[opnum]
             if optype in ('INT1', 'INT4', 'UINT1', 'UINT4'):
-                self.ops.append(getop(bytecode))
+                ops.append(getop(bytecode))
             elif optype in ('LVT1', 'LVT4'):
-                self.ops.append(bc.local(getop(bytecode)))
+                ops.append(bc.local(getop(bytecode)))
             elif optype in ('AUX4'):
-                self.ops.append(bc.aux(getop(bytecode)))
-                auxtype, auxdata = self.ops[-1]
+                ops.append(bc.aux(getop(bytecode)))
+                auxtype, auxdata = ops[-1]
                 if auxtype == 'ForeachInfo':
                     auxdata = [
                         [bc.local(varidx) for varidx in varlist]
@@ -103,13 +105,18 @@ class Inst(object):
                     ]
                 else:
                     assert False
-                self.ops[-1] = (auxtype, auxdata)
+                ops[-1] = (auxtype, auxdata)
             else:
                 assert False
+        d['ops'] = tuple(ops)
+
         # Note that this doesn't get printed on str() so we only see
         # the value when it gets reduced to a BCJump class
-        if self.name in JUMP_INSTRUCTIONS:
-            self.targetloc = self.loc + self.ops[0]
+        d['targetloc'] = None
+        if d['name'] in JUMP_INSTRUCTIONS:
+            d['targetloc'] = d['loc'] + d['ops'][0]
+
+        return super(Inst, cls).__new__(cls, **d)
 
     def __repr__(self):
         return '<%s: %s %s>' % (
