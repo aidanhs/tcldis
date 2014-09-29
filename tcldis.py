@@ -578,17 +578,6 @@ def _bblock_create(insts):
         assert bblocks_insts[0].loc == end
         bbinsts.append(bblocks_insts.pop(0))
         bblocks.append(BBlock(bbinsts, bbinsts[0].loc))
-    # Jump fixup
-    for inst in insts:
-        if inst.name not in JUMP_INSTRUCTIONS:
-            continue
-        for bblock in bblocks:
-            if inst.targetloc == bblock.loc:
-                inst.targetloc = bblock
-                break
-        else:
-            # Ensure all jumps point to a bblock
-            assert False
     return bblocks
 
 def _inst_reductions():
@@ -782,16 +771,16 @@ def _bblock_flow(bblocks):
         if jump0 is None or jump0.on is None: continue
         if jump1 is None or jump1.on is not None: continue
         if jump2 is not None: continue
-        if jump0.targetloc is not bblocks[i+2]: continue
-        if jump1.targetloc is not bblocks[i+3]: continue
+        if jump0.targetloc != bblocks[i+2].loc: continue
+        if jump1.targetloc != bblocks[i+3].loc: continue
         if any([
                 isinstance(inst, Inst) for inst in
                 bblocks[i+1].insts + bblocks[i+2].insts
                 ]):
             continue
         targets = _get_targets(bblocks)
-        if targets.count(bblocks[i+1]) > 0: continue
-        if targets.count(bblocks[i+2]) > 1: continue
+        if targets.count(bblocks[i+1].loc) > 0: continue
+        if targets.count(bblocks[i+2].loc) > 1: continue
         jumps = [bblocks[i+0].insts.pop(), bblocks[i+1].insts.pop()]
         assert jumps == [jump0, jump1]
         bblocks[i].insts.append(BCIf(jumps, bblocks[i+1:i+3]))
@@ -861,14 +850,14 @@ def _bblock_flow(bblocks):
         # Unreduced because jumps don't know how to consume foreach_step
         if not isinstance(jump1, Inst) or jump1.name != 'jumpFalse1': continue
         if jump2 is None or jump2.on is not None: continue
-        if jump1.targetloc is not bblocks[i+3]: continue
-        if jump2.targetloc is not bblocks[i+1]: continue
+        if jump1.targetloc is not bblocks[i+3].loc: continue
+        if jump2.targetloc is not bblocks[i+1].loc: continue
         if any([isinstance(inst, Inst) for inst in bblocks[i+2].insts]): continue
         if isinstance(bblocks[i+3].insts[0], Inst): continue
         targets = _get_targets(bblocks)
-        if targets.count(bblocks[i+1]) > 1: continue
-        if targets.count(bblocks[i+2]) > 0: continue
-        if targets.count(bblocks[i+3]) > 1: continue
+        if targets.count(bblocks[i+1].loc) > 1: continue
+        if targets.count(bblocks[i+2].loc) > 0: continue
+        if targets.count(bblocks[i+3].loc) > 1: continue
         # Do some trickery here because we need to consume the begin bblock
         # but retain the original object as a reference for jump targets.
         foreach_start = bblocks[i].insts.pop()
@@ -891,7 +880,7 @@ def _bblock_join(bblocks):
     for i, bblock in enumerate(bblocks):
         if len(bblock.insts) > 0: continue
         targets = _get_targets(bblocks)
-        if bblock in targets: continue
+        if bblock.loc in targets: continue
         bblocks[i:i+1] = []
 
         return True
@@ -910,7 +899,7 @@ def _bblock_join(bblocks):
         if any([isinstance(inst, Inst) and inst.name in JUMP_INSTRUCTIONS
                 for inst in bblock1.insts[-1:]]):
             continue
-        if bblock2 in targets:
+        if bblock2.loc in targets:
             continue
         if _is_catch_begin(bblock2):
             continue
