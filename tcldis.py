@@ -555,7 +555,7 @@ def _bblock_create(insts):
         if newstart:
             starts.add(inst.loc)
             newstart = False
-        if inst.name in JUMP_INSTRUCTIONS:
+        if inst.targetloc is not None:
             ends.add(inst.loc)
             starts.add(inst.targetloc)
             newstart = True
@@ -738,8 +738,7 @@ def _get_targets(bblocks):
     inst_targets = [bblock.insts for bblock in bblocks]
     inst_targets = [i for i in itertools.chain(*inst_targets)]
     inst_targets = [i for i in inst_targets if isinstance(i, Inst)]
-    inst_targets = [i for i in inst_targets if i.name in JUMP_INSTRUCTIONS]
-    inst_targets = [i.targetloc for i in inst_targets]
+    inst_targets = [i.targetloc for i in inst_targets if i.targetloc is not None]
     return targets + inst_targets
 def _get_jump(bblock):
     if len(bblock.insts) == 0: return None
@@ -903,7 +902,7 @@ def _bblock_join(bblocks):
         if _get_jump(bblock1) is not None:
             continue
         # Unreduced jumps
-        if any([isinstance(inst, Inst) and inst.name in JUMP_INSTRUCTIONS
+        if any([isinstance(inst, Inst) and inst.targetloc is not None
                 for inst in bblock1.insts[-1:]]):
             continue
         if bblock2.loc in targets:
