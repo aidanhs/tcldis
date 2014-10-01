@@ -130,17 +130,19 @@ class Inst(InstTuple):
 #################################################################
 
 # The below represent my interpretation of the Tcl stack machine
-class BCValue(object):
-    def __init__(self, inst, value, *args, **kwargs):
-        super(BCValue, self).__init__(*args, **kwargs)
+
+BCValueTuple = namedtuple('BCValueTuple', ['inst', 'value', 'stackn'])
+class BCValue(BCValueTuple):
+    def __new__(cls, inst, value, *args, **kwargs):
         assert all([v.stackn == 1 for v in value if isinstance(v, BCValue)])
-        self.inst = inst
-        self.value = value
-        self.stackn = 1
+        d = {}
+        d['inst'] = inst
+        d['value'] = value
+        d['stackn'] = 1
+        return super(BCValue, cls).__new__(cls, **d)
     def destack(self):
         assert self.stackn == 1
-        self.stackn -= 1
-        return self
+        return self._replace(stackn=self.stackn-1)
     def __repr__(self): assert False
     def fmt(self): assert False
 
