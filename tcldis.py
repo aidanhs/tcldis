@@ -133,16 +133,14 @@ class Inst(InstTuple):
 class BCValue(object):
     def __init__(self, inst, value, *args, **kwargs):
         super(BCValue, self).__init__(*args, **kwargs)
-        assert all([v.stack() == 1 for v in value if isinstance(v, BCValue)])
+        assert all([v.stackn == 1 for v in value if isinstance(v, BCValue)])
         self.inst = inst
         self.value = value
-        self._stackn = 1
-    def stack(self, n=None):
-        if n is None:
-            return self._stackn
-        assert n == -1
-        assert self._stackn == 1
-        self._stackn -= 1
+        self.stackn = 1
+    def destack(self):
+        assert self.stackn == 1
+        self.stackn -= 1
+        return self
     def __repr__(self): assert False
     def fmt(self): assert False
 
@@ -232,7 +230,7 @@ class BCProcCall(BCValue):
         if args[0].fmt() == '::tcl::array::set':
             args[0:1] = [BCLiteral(None, 'array'), BCLiteral(None, 'set')]
         cmd = ' '.join([arg.fmt() for arg in args])
-        if self.stack():
+        if self.stackn:
             cmd = '[' + cmd + ']'
         return cmd
 
@@ -244,7 +242,7 @@ class BCSet(BCProcCall):
         return 'BCSet(%s)' % (self.value,)
     def fmt(self):
         cmd = 'set %s %s' % tuple([v.fmt() for v in self.value])
-        if self.stack():
+        if self.stackn:
             cmd = '[' + cmd + ']'
         return cmd
 
@@ -264,7 +262,7 @@ class BCVariable(BCProcCall):
         return 'BCVariable(%s)' % (self.value,)
     def fmt(self):
         cmd = 'variable %s' % (self.value[0].fmt(),)
-        if self.stack():
+        if self.stackn:
             cmd = '[' + cmd + ']'
         return cmd
 
@@ -318,7 +316,7 @@ class BCDone(BCProcCall):
         assert len(self.value) == 1
         # Unfortunately cannot be sure this is a BCProcCall as done is sometimes
         # used for the return call
-        self.value[0].stack(-1)
+        self.value[0] = self.value[0].destack()
     def __repr__(self):
         return 'BCDone(%s)' % (repr(self.value),)
     def fmt(self):
@@ -342,7 +340,7 @@ class BCIf(BCProcCall):
                 assert inst.value == ''
                 bblock.insts[-1:] = []
             elif isinstance(inst, BCProcCall):
-                inst.stack(-1)
+                bblock.insts[-1] = inst.destack()
             else:
                 assert False
     def __repr__(self):
@@ -367,7 +365,7 @@ class BCIf(BCProcCall):
                 '\n\t' + self.value[1].fmt().replace('\n', '\n\t') + '\n' +
                 '}'
             )
-        if self.stack():
+        if self.stackn:
             cmd = '[' + cmd + ']'
         return cmd
 
@@ -414,7 +412,7 @@ class BCCatch(BCProcCall):
             begin.insts[-3] = begin.insts[-3].value[1]
         else:
             end.insts[2] = end.insts[2].ops[0]
-        begin.insts[-3].stack(-1)
+        begin.insts[-3] = begin.insts[-3].destack()
         begin.insts.pop(0)
         begin.insts.pop(-1)
         begin.insts.pop(-1)
@@ -427,7 +425,7 @@ class BCCatch(BCProcCall):
         else:
             varname = self.value[2].insts[2]
         cmd = 'catch {%s} %s' % (catchblock, varname)
-        if self.stack():
+        if self.stackn:
             cmd = '[' + cmd + ']'
         return cmd
 
@@ -458,9 +456,7 @@ class BCForeach(BCProcCall):
         assert begin.insts[1].ops[0] == step.insts[0].ops[0]
         assert len(begin.insts[1].ops[0][1]) == 1
         code.insts.pop()
-        if lit is None:
-            self.stack(-1)
-        else:
+        if lit is not None:
             assert lit.value == ''
     def __repr__(self):
         return 'BCForeach(%s)' % (self.value,)
@@ -470,7 +466,7 @@ class BCForeach(BCProcCall):
         felist = self.value[0].insts[0].value[1].fmt()
         feblock = '\n\t' + self.value[2].fmt().replace('\n', '\n\t') + '\n'
         cmd = 'foreach {%s} %s {%s}' % (fevars, felist, feblock)
-        if self.stack():
+        if self.stackn:
             cmd = '[' + cmd + ']'
         return cmd
 
@@ -594,7 +590,6 @@ def _inst_reductions():
     """
     def N(n): return lambda _: n
     firstop = lambda inst: inst.ops[0]
-    def destack(v): v.stack(-1); return v
     def lit(s): return BCLiteral(None, s)
     def is_simple(arg):
         return any([
@@ -612,7 +607,7 @@ def _inst_reductions():
                     break
                 if not isinstance(arg, BCValue):
                     break
-                if arg.stack() < 1:
+                if arg.stackn < 1:
                     continue
                 if checkargs_fn and not checkargs_fn(arg):
                     break
@@ -666,7 +661,7 @@ def _inst_reductions():
         'not': [[N(1)], BCExpr],
         # Misc
         'concat1': [[firstop], BCConcat],
-        'pop': [[N(1), lambda arg: isinstance(arg, BCProcCall)], lambda i, v: destack(v[0])],
+        'pop': [[N(1), lambda arg: isinstance(arg, BCProcCall)], lambda i, v: v[0].destack()],
         'dup': [[N(1), is_simple], lambda i, v: [v[0], copy.copy(v[0])]],
         'done': [[N(1)], BCDone],
         'returnImm': [[N(2)], BCReturn],
@@ -875,6 +870,8 @@ def _bblock_flow(bblocks):
         if isinstance(bblocks[i+3].insts[0], BCLiteral):
             end = bblocks[i+3].insts.pop(0)
         bblocks[i].insts.append(BCForeach(None, [begin] + bblocks[i+1:i+3] + [end]))
+        if end is None:
+            bblocks[i].insts[-1] = bblocks[i].insts[-1].destack()
         bblocks[i+1:i+3] = []
         return True
 
