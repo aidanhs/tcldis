@@ -238,7 +238,7 @@ class BCProcCall(BCValue):
 
 class BCSet(BCProcCall):
     def __init__(self, *args, **kwargs):
-        super(BCProcCall, self).__init__(*args, **kwargs)
+        super(BCSet, self).__init__(*args, **kwargs)
         assert len(self.value) == 2
     def __repr__(self):
         return 'BCSet(%s)' % (self.value,)
