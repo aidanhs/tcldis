@@ -26,7 +26,7 @@ def _getop(optype):
     def getop_lambda(bc):
         # The 'standard' sizes in the struct module match up to what Tcl expects
         numbytes = struct.calcsize(optype)
-        opbytes = ''.join([chr(bc.pop(0)) for i in range(numbytes)])
+        opbytes = ''.join([chr(bc.pop(0)) for _ in range(numbytes)])
         return struct.unpack(optype, opbytes)[0]
     return getop_lambda
 
@@ -76,7 +76,7 @@ class BC(object):
         return self._bytecode[oldpc:self._pc]
     def copy(self):
         bc = BC(self._bytecode, self._literals, self._locals, self._auxs)
-        bc._pc = self._pc
+        bc.get(self._pc)
         return bc
 
 # Tcl bytecode instruction
@@ -280,7 +280,7 @@ class BCExpr(BCValue):
     }
     def __init__(self, *args, **kwargs):
         super(BCExpr, self).__init__(*args, **kwargs)
-        op, nargs = self._exprmap[self.inst.name]
+        _, nargs = self._exprmap[self.inst.name]
         assert len(self.value) == nargs
     def __repr__(self):
         return 'BCExpr(%s)' % (self.value,)
@@ -697,7 +697,7 @@ def _bblock_hack(bc, bblock):
         assert bblock.insts[i+1].name in ('push1', 'push4')
         assert bc.literal(bblock.insts[i+1].ops[0]) == ''
         variableis.append(i)
-    [bblock.insts.pop(i+1) for i in reversed(variableis)]
+    for i in reversed(variableis): bblock.insts.pop(i+1)
 
 def _bblock_reduce(bc, bblock):
     """
@@ -926,7 +926,7 @@ def decompile(bc):
     insts = getinsts(bc)
     bblocks = _bblock_create(insts)
     # Reduce bblock logic
-    [_bblock_hack(bc, bblock) for bblock in bblocks]
+    for bblock in bblocks: _bblock_hack(bc, bblock)
     change = True
     while change:
         change = False
