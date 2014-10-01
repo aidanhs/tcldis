@@ -133,7 +133,7 @@ class Inst(InstTuple):
 
 BCValueTuple = namedtuple('BCValueTuple', ['inst', 'value', 'stackn'])
 class BCValue(BCValueTuple):
-    def __new__(cls, inst, value, *args, **kwargs):
+    def __new__(cls, inst, value):
         assert all([v.stackn == 1 for v in value if isinstance(v, BCValue)])
         d = {}
         d['inst'] = inst
