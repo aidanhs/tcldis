@@ -14,9 +14,9 @@ getbc.__doc__ = _tcldis.getbc.__doc__
 literal_convert = _tcldis.literal_convert
 
 INSTRUCTIONS = _tcldis.inst_table()
-JUMP_INSTRUCTIONS = (
+JUMP_INSTRUCTIONS = [
     'jump1', 'jump4', 'jumpTrue1', 'jumpTrue4', 'jumpFalse1', 'jumpFalse4'
-)
+]
 
 def _getop(optype):
     """
@@ -91,11 +91,11 @@ class Inst(InstTuple):
         ops = []
         for opnum in inst_type['operands']:
             optype, getop = OPERANDS[opnum]
-            if optype in ('INT1', 'INT4', 'UINT1', 'UINT4'):
+            if optype in ['INT1', 'INT4', 'UINT1', 'UINT4']:
                 ops.append(getop(bytecode))
-            elif optype in ('LVT1', 'LVT4'):
+            elif optype in ['LVT1', 'LVT4']:
                 ops.append(bc.local(getop(bytecode)))
-            elif optype in ('AUX4'):
+            elif optype in ['AUX4']:
                 ops.append(bc.aux(getop(bytecode)))
                 auxtype, auxdata = ops[-1]
                 if auxtype == 'ForeachInfo':
@@ -568,7 +568,7 @@ def _bblock_create(insts):
                     instbeforeidx += 1
                 instbefore = insts[instbeforeidx]
                 ends.add(instbefore.loc)
-        elif inst.name in ('beginCatch4', 'endCatch'):
+        elif inst.name in ['beginCatch4', 'endCatch']:
             starts.add(inst.loc)
             if inst.loc != 0:
                 ends.add(insts[i-1].loc)
@@ -694,7 +694,7 @@ def _bblock_hack(bc, bblock):
     for i, inst in enumerate(bblock.insts):
         if not isinstance(inst, Inst): continue
         if not inst.name == 'variable': continue
-        assert bblock.insts[i+1].name in ('push1', 'push4')
+        assert bblock.insts[i+1].name in ['push1', 'push4']
         assert bc.literal(bblock.insts[i+1].ops[0]) == ''
         variableis.append(i)
     for i in reversed(variableis): bblock.insts.pop(i+1)
@@ -707,7 +707,7 @@ def _bblock_reduce(bc, bblock):
     for i, inst in enumerate(bblock.insts):
         if not isinstance(inst, Inst): continue
 
-        if inst.name in ('push1', 'push4'):
+        if inst.name in ['push1', 'push4']:
             bblock.insts[i] = BCLiteral(inst, bc.literal(inst.ops[0]))
 
         elif inst.name in INST_REDUCTIONS:
