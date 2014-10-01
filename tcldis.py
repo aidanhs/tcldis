@@ -448,7 +448,7 @@ class BCForeach(BCProcCall):
             isinstance(step.insts[0], Inst),
             isinstance(step.insts[1], Inst),
             isinstance(code.insts[-1], BCJump),
-            isinstance(lit, BCLiteral) or lit is None,
+            isinstance(lit, BCLiteral),
         ]) and all([
             begin.insts[1].name == 'foreach_start4',
             step.insts[0].name == 'foreach_step4',
@@ -458,8 +458,6 @@ class BCForeach(BCProcCall):
         assert begin.insts[1].ops[0] == step.insts[0].ops[0]
         assert len(begin.insts[1].ops[0][1]) == 1
         code.insts.pop()
-        if lit is not None:
-            assert lit.value == ''
     def __repr__(self):
         return 'BCForeach(%s)' % (self.value,)
     def fmt(self):
@@ -856,7 +854,7 @@ def _bblock_flow(bblocks):
         if jump1.targetloc is not bblocks[i+3].loc: continue
         if jump2.targetloc is not bblocks[i+1].loc: continue
         if any([isinstance(inst, Inst) for inst in bblocks[i+2].insts]): continue
-        if isinstance(bblocks[i+3].insts[0], Inst): continue
+        if not isinstance(bblocks[i+3].insts[0], BCLiteral): continue
         targets = _get_targets(bblocks)
         if targets.count(bblocks[i+1].loc) > 1: continue
         if targets.count(bblocks[i+2].loc) > 0: continue
@@ -868,12 +866,8 @@ def _bblock_flow(bblocks):
         varlists = [bblocks[i].insts.pop() for i in range(numvarlists)]
         # TODO: Location isn't actually correct...do we care?
         begin = BBlock(varlists + [foreach_start], foreach_start.loc)
-        end = None
-        if isinstance(bblocks[i+3].insts[0], BCLiteral):
-            end = bblocks[i+3].insts.pop(0)
+        end = bblocks[i+3].insts.pop(0)
         bblocks[i].insts.append(BCForeach(None, [begin] + bblocks[i+1:i+3] + [end]))
-        if end is None:
-            bblocks[i].insts[-1] = bblocks[i].insts[-1].destack()
         bblocks[i+1:i+3] = []
         return True
 
