@@ -315,16 +315,16 @@ class BCReturn(BCProcCall):
 class BCDone(BCProcCall):
     def __init__(self, *args, **kwargs):
         super(BCDone, self).__init__(*args, **kwargs)
-        assert len(self.value) == 1
         # Unfortunately cannot be sure this is a BCProcCall as done is sometimes
-        # used for the return call
-        self.value[0] = self.value[0].destack()
+        # used for the return call (i.e. tcl throws away the information that we've
+        # written 'return'.
+        assert len(self.value) == 1
     def __repr__(self):
         return 'BCDone(%s)' % (repr(self.value),)
     def fmt(self):
         # In the general case it's impossible to guess whether 'return' was written.
         if isinstance(self.value[0], BCProcCall):
-            return self.value[0].fmt()
+            return self.value[0].destack().fmt()
         return 'return ' + self.value[0].fmt()
 
 # self.value contains two bblocks, self.inst contains two jumps
