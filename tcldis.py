@@ -378,21 +378,7 @@ class BCCatch(BCProcCall):
         assert all([isinstance(v, BBlock) for v in self.value])
         begin, middle, end = self.value
         # Make sure we recognise the overall structure of this catch
-        assert (all([ # First form of a catch
-            len(begin.insts) >= 4, # beginCatch4, code, return code, jump
-            len(middle.insts) == 4,
-            len(end.insts) == 1,
-        ]) and all([
-            isinstance(begin.insts[-3], BCSet),
-            isinstance(begin.insts[-2], BCLiteral),
-            isinstance(begin.insts[-1], BCJump),
-        ]) and all([
-            middle.insts[0].name == 'pushResult',
-            middle.insts[1].name == 'storeScalar1',
-            middle.insts[2].name == 'pop',
-            middle.insts[3].name == 'pushReturnCode',
-            end.insts[0].name    == 'endCatch',
-        ])) or (all([ # This is the second form a catch may take
+        assert (all([
             len(begin.insts) >= 4, # beginCatch4, code, return code, jump
             len(middle.insts) == 2,
             len(end.insts) == 4,
@@ -409,11 +395,7 @@ class BCCatch(BCProcCall):
             end.insts[3].name    == 'pop',
         ]))
         # Nail down the details and move things around to our liking
-        if len(end.insts) == 1:
-            assert begin.insts[-3].value[0].fmt() == middle.insts[1].ops[0]
-            begin.insts[-3] = begin.insts[-3].value[1]
-        else:
-            end.insts[2] = end.insts[2].ops[0]
+        end.insts[2] = end.insts[2].ops[0]
         begin.insts[-3] = begin.insts[-3].destack()
         begin.insts.pop(0)
         begin.insts.pop(-1)
@@ -422,10 +404,7 @@ class BCCatch(BCProcCall):
         return 'BCCatch(%s)' % (self.value,)
     def fmt(self):
         catchblock = self.value[0].fmt()
-        if len(self.value[2].insts) == 1:
-            varname = self.value[1].insts[1].ops[0]
-        else:
-            varname = self.value[2].insts[2]
+        varname = self.value[2].insts[2]
         cmd = 'catch {%s} %s' % (catchblock, varname)
         if self.stackn:
             cmd = '[' + cmd + ']'
