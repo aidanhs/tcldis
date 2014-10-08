@@ -1,3 +1,6 @@
 [submodule "opt/tcl8.5"]
 	path = opt/tcl8.5
 	url = https://github.com/tcltk/tcl.git
+[submodule "opt/libtclpy"]
+	path = opt/libtclpy
+	url = https://github.com/aidanhs/libtclpy.git
