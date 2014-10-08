@@ -915,15 +915,17 @@ def _bblock_join(bblocks):
 
     return False
 
-def decompile(bc):
+def _decompile(bc):
     """
     Given some bytecode and literals, attempt to decompile to tcl.
     """
     assert isinstance(bc, BC)
     insts = getinsts(bc)
     bblocks = _bblock_create(insts)
+    yield bblocks[:]
     # Reduce bblock logic
     bblocks = [_bblock_hack(bc, bblock) for bblock in bblocks]
+    yield bblocks[:]
     change = True
     while change:
         change = False
@@ -932,10 +934,22 @@ def decompile(bc):
         bblocks = reducedblocks
         change = change or _bblock_join(bblocks)
         change = change or _bblock_flow(bblocks)
+        if change: yield bblocks[:]
+
+def _bblocks_fmt(bblocks):
     outstr = ''
     for bblock in bblocks:
         #outstr += '===========%s\n' % (bblock)
         outstr += bblock.fmt()
         outstr += '\n'
-    #print(outstr)
     return outstr
+
+def decompile(bc):
+    bblocks = None
+    for bblocks in _decompile(bc):
+        pass
+    return _bblocks_fmt(bblocks)
+
+def decompile_steps(bc):
+    steps = [_bblocks_fmt(bblocks) for bblocks in _decompile(bc)]
+    return steps
