@@ -340,20 +340,22 @@ class BCIf(BCProcCall):
         assert len(self.value) == len(self.inst) == 2
         assert all([isinstance(jump, BCJump) for jump in self.inst])
         assert self.inst[0].on in (True, False) and self.inst[1].on is None
-        # An if condition takes 'ownership' of the values returned in any
-        # of its branches
-        for bblock in self.value:
-            inst = bblock.insts[-1]
-            if isinstance(inst, BCLiteral):
-                assert inst.value == ''
-                bblock.insts[-1:] = []
-            elif isinstance(inst, BCProcCall):
-                bblock.insts[-1] = inst.destack()
-            else:
-                assert False
     def __repr__(self):
         return 'BCIf(%s)' % (self.value,)
     def fmt(self):
+        value = list(self.value)
+        # An if condition takes 'ownership' of the values returned in any
+        # of its branches
+        for i, bblock in enumerate(self.value):
+            inst = bblock.insts[-1]
+            if isinstance(inst, BCLiteral):
+                assert inst.value == ''
+                value[i] = bblock.popinst()
+            elif isinstance(inst, BCProcCall):
+                value[i] = bblock.replaceinst(len(bblock.insts)-1, [inst.destack()])
+            else:
+                assert False
+
         if isinstance(self.inst[0].value[0], BCExpr):
             conditionstr = self.inst[0].value[0].expr()
             if self.inst[0].on is True:
@@ -364,13 +366,13 @@ class BCIf(BCProcCall):
                 conditionstr = '!' + conditionstr
         cmd = (
             'if {%s} {' +
-            '\n\t' + self.value[0].fmt().replace('\n', '\n\t') + '\n' +
+            '\n\t' + value[0].fmt().replace('\n', '\n\t') + '\n' +
             '}'
         ) % (conditionstr,)
-        if len(self.value[1].insts) > 0:
+        if len(value[1].insts) > 0:
             cmd += (
                 ' else {' +
-                '\n\t' + self.value[1].fmt().replace('\n', '\n\t') + '\n' +
+                '\n\t' + value[1].fmt().replace('\n', '\n\t') + '\n' +
                 '}'
             )
         if self.stackn:
@@ -400,17 +402,15 @@ class BCCatch(BCProcCall):
             end.insts[2].name    == 'storeScalar1',
             end.insts[3].name    == 'pop',
         ]))
-        # Nail down the details and move things around to our liking
-        end.insts[2] = end.insts[2].ops[0]
-        begin.insts[-3] = begin.insts[-3].destack()
-        begin.insts.pop(0)
-        begin.insts.pop(-1)
-        begin.insts.pop(-1)
     def __repr__(self):
         return 'BCCatch(%s)' % (self.value,)
     def fmt(self):
-        catchblock = self.value[0].fmt()
-        varname = self.value[2].insts[2]
+        begin, _, end = self.value
+        # Nail down the details and move things around to our liking
+        begin = begin.replaceinst((-3, -2), [begin.insts[-3].destack()])
+        begin = begin.popinst().popinst().replaceinst(0, [])
+        catchblock = begin.fmt()
+        varname = end.insts[2].ops[0]
         cmd = 'catch {%s} %s' % (catchblock, varname)
         if self.stackn:
             cmd = '[' + cmd + ']'
@@ -442,14 +442,15 @@ class BCForeach(BCProcCall):
         # Nail down the details and move things around to our liking
         assert begin.insts[1].ops[0] == step.insts[0].ops[0]
         assert len(begin.insts[1].ops[0][1]) == 1
-        code.insts.pop()
     def __repr__(self):
         return 'BCForeach(%s)' % (self.value,)
     def fmt(self):
+        value = list(self.value)
+        value[2] = value[2].popinst()
         # TODO: this is lazy
-        fevars = ' '.join(self.value[0].insts[1].ops[0][1][0])
-        felist = self.value[0].insts[0].value[1].fmt()
-        feblock = '\n\t' + self.value[2].fmt().replace('\n', '\n\t') + '\n'
+        fevars = ' '.join(value[0].insts[1].ops[0][1][0])
+        felist = value[0].insts[0].value[1].fmt()
+        feblock = '\n\t' + value[2].fmt().replace('\n', '\n\t') + '\n'
         cmd = 'foreach {%s} %s {%s}' % (fevars, felist, feblock)
         if self.stackn:
             cmd = '[' + cmd + ']'
@@ -500,10 +501,24 @@ class BCArrayElt(BCNonValue):
 class BBlock(object):
     def __init__(self, insts, loc, *args, **kwargs):
         super(BBlock, self).__init__(*args, **kwargs)
-        self.insts = insts
+        assert type(insts) is list
+        assert type(loc) is int
+        self.insts = tuple(insts)
         self.loc = loc
     def __repr__(self):
         return 'BBlock(at %s, %s insts)' % (self.loc, len(self.insts))
+    def replaceinst(self, ij, replaceinsts):
+        newinsts = list(self.insts)
+        if type(ij) is not tuple:
+            assert ij >= 0
+            ij = (ij, ij+1)
+        assert type(replaceinsts) is list
+        newinsts[ij[0]:ij[1]] = replaceinsts
+        return BBlock(newinsts, self.loc)
+    def appendinsts(self, insts):
+        return self.replaceinst((len(self.insts), len(self.insts)), insts)
+    def popinst(self):
+        return self.replaceinst(len(self.insts)-1, [])
     def fmt(self):
         return '\n'.join([
             inst.fmt() if not isinstance(inst, Inst) else str(inst)
@@ -600,12 +615,6 @@ def _inst_reductions():
                 argis.append(argi)
             arglist.reverse()
             if len(arglist) != nargs: return None
-            # Remove any values we used as arguments.
-            # Must go from biggest index to smallest! This happens
-            # automatically because of the order we append in, but sort to
-            # make it explicit
-            for argi in sorted(argis, reverse=True):
-                bblock.insts.pop(argi)
             return arglist
         return getargsfn
 
@@ -677,7 +686,9 @@ def _bblock_hack(bc, bblock):
         assert bblock.insts[i+1].name in ['push1', 'push4']
         assert bc.literal(bblock.insts[i+1].ops[0]) == ''
         variableis.append(i)
-    for i in reversed(variableis): bblock.insts.pop(i+1)
+    for i in reversed(variableis):
+        bblock = bblock.replaceinst(i+1, [])
+    return bblock
 
 def _bblock_reduce(bc, bblock):
     """
@@ -688,7 +699,7 @@ def _bblock_reduce(bc, bblock):
         if not isinstance(inst, Inst): continue
 
         if inst.name in ['push1', 'push4']:
-            bblock.insts[i] = BCLiteral(inst, bc.literal(inst.ops[0]))
+            bblock = bblock.replaceinst(i, [BCLiteral(inst, bc.literal(inst.ops[0]))])
 
         elif inst.name in INST_REDUCTIONS:
             IRED = INST_REDUCTIONS[inst.name]
@@ -696,17 +707,15 @@ def _bblock_reduce(bc, bblock):
             redfn = IRED['redfn']
             arglist = getargsfn(inst, bblock, i)
             if arglist is None: continue
-            # args are popped so inst location changes
-            i = i - len(arglist)
             newinsts = redfn(inst, arglist)
             if type(newinsts) is not list:
                 newinsts = [newinsts]
-            bblock.insts[i:i+1] = newinsts
+            bblock = bblock.replaceinst((i-len(arglist), i+1), newinsts)
 
         else:
             continue # No change, continue scanning basic blcok
 
-        return True
+        return bblock
 
     return False
 
@@ -767,9 +776,11 @@ def _bblock_flow(bblocks):
         targets = _get_targets(bblocks)
         if targets.count(bblocks[i+1].loc) > 0: continue
         if targets.count(bblocks[i+2].loc) > 1: continue
-        jumps = [bblocks[i+0].insts.pop(), bblocks[i+1].insts.pop()]
+        jumps = [bblocks[i+0].insts[-1], bblocks[i+1].insts[-1]]
+        bblocks[i+0] = bblocks[i+0].popinst()
+        bblocks[i+1] = bblocks[i+1].popinst()
         assert jumps == [jump0, jump1]
-        bblocks[i].insts.append(BCIf(jumps, bblocks[i+1:i+3]))
+        bblocks[i] = bblocks[i].appendinsts([BCIf(jumps, bblocks[i+1:i+3])])
         bblocks[i+1:i+3] = []
 
         return True
@@ -800,7 +811,8 @@ def _bblock_flow(bblocks):
         # Do some trickery here because we need to consume the begin bblock
         # but retain the original object as a reference for jump targets.
         begin = copy.copy(begin)
-        endcatchinst = end.insts.pop(0)
+        endcatchinst = end.insts[0]
+        end = end.replaceinst(0, [])
         endcatch = BBlock([endcatchinst], endcatchinst.loc)
         if (len(end.insts) > 2 and
                 isinstance(end.insts[0], Inst) and
@@ -810,10 +822,11 @@ def _bblock_flow(bblocks):
                 end.insts[1].name == 'storeScalar1' and
                 end.insts[2].name == 'pop'
             ):
-            endcatch.insts.append(end.insts.pop(0))
-            endcatch.insts.append(end.insts.pop(0))
-            endcatch.insts.append(end.insts.pop(0))
-        bblocks[i].insts = [BCCatch(None, [begin, middle, endcatch])]
+            endcatch = endcatch.appendinsts(list(end.insts[0:3]))
+            end = end.replaceinst((0, 3), [])
+        bccatch = BCCatch(None, [begin, middle, endcatch])
+        bblocks[i] = begin.replaceinst((0, len(begin.insts)), [bccatch])
+        bblocks[i+2] = end
         bblocks[i+1:i+2] = []
         return True
 
@@ -846,13 +859,19 @@ def _bblock_flow(bblocks):
         if targets.count(bblocks[i+3].loc) > 1: continue
         # Do some trickery here because we need to consume the begin bblock
         # but retain the original object as a reference for jump targets.
-        foreach_start = bblocks[i].insts.pop()
+        foreach_start = bblocks[i].insts[-1]
+        bblocks[i] = bblocks[i].popinst()
         numvarlists = len(foreach_start.ops[0][1])
-        varlists = [bblocks[i].insts.pop() for i in range(numvarlists)]
+        varlists = []
+        for i in range(numvarlists):
+            varlists.append(bblocks[i].insts[-1])
+            bblocks[i] = bblocks[i].popinst()
         # TODO: Location isn't actually correct...do we care?
         begin = BBlock(varlists + [foreach_start], foreach_start.loc)
-        end = bblocks[i+3].insts.pop(0)
-        bblocks[i].insts.append(BCForeach(None, [begin] + bblocks[i+1:i+3] + [end]))
+        end = bblocks[i+3].insts[0]
+        bblocks[i+3] = bblocks[i+3].replaceinst(0, [])
+        foreach = BCForeach(None, [begin] + bblocks[i+1:i+3] + [end])
+        bblocks[i] = bblocks[i].appendinsts([foreach])
         bblocks[i+1:i+3] = []
         return True
 
@@ -889,7 +908,7 @@ def _bblock_join(bblocks):
             continue
         if _is_catch_end(bblock2):
             continue
-        bblock1.insts.extend(bblock2.insts)
+        bblocks[i] = bblock1.appendinsts(list(bblock2.insts))
         bblocks[i+1:i+2] = []
 
         return True
@@ -904,11 +923,13 @@ def decompile(bc):
     insts = getinsts(bc)
     bblocks = _bblock_create(insts)
     # Reduce bblock logic
-    for bblock in bblocks: _bblock_hack(bc, bblock)
+    bblocks = [_bblock_hack(bc, bblock) for bblock in bblocks]
     change = True
     while change:
         change = False
-        change = any([_bblock_reduce(bc, bblock) for bblock in bblocks])
+        reducedblocks = [_bblock_reduce(bc, bblock) or bblock for bblock in bblocks]
+        change = any([b1 is not b2 for b1, b2 in zip(bblocks, reducedblocks)])
+        bblocks = reducedblocks
         change = change or _bblock_join(bblocks)
         change = change or _bblock_flow(bblocks)
     outstr = ''
