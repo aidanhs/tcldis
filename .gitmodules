@@ -1,0 +1,3 @@
+[submodule "opt/tcl8.5"]
+	path = opt/tcl8.5
+	url = https://github.com/tcltk/tcl.git
