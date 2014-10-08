@@ -34,7 +34,7 @@ It is assumed that you
  - have got the repo (either by `git clone` or a tar.gz from the releases page).
  - have updated your package lists.
 
-The build process fairly simple:
+The build process is fairly simple:
  - make sure `make` and `gcc` are installed.
  - make sure you can run `python-config` and have the Python headers available
    (usually installed by the Python development package for your distro).
@@ -57,8 +57,8 @@ For other distros you may need give the path of tclConfig.sh. E.g. CentOS 6.5:
 Now try it out:
 
 	$ python
-	% import tcldis
-	% tcldis.printbc("set x 1")
+	>>> import tcldis
+	>>> tcldis.printbc("set x 1")
 	ByteCode 0x0x26a0390, refCt 1, epoch 15, interp 0x0x26708f0 (epoch 15)
 	  Source "set x 1"
 	  Cmds 1, src 7, inst 6, litObjs 2, aux 0, stkDepth 2, code/src 0.00
@@ -69,3 +69,41 @@ Now try it out:
 	    (2) push1 1         # "1"
 	    (4) storeStk 
 	    (5) done 
+
+TESTS AND ACTUAL DECOMPILATION
+------------------------------
+
+The tests are a little more complex to set up as they require a build of
+libtclpy with stubs disabled (tcldis itself cannot use stubs - it uses some Tcl
+functions that aren't exposed by the stub library). Development is currently
+done against a single tag of tcl (version 8.5.16) so tests will probably work
+best against that version.
+
+For convenience, libtclpy and the correct tag of tcl are available as git
+submodules. You can get a self-contained (no system tcl required) working test
+environment working like so:
+
+    $ git submodule init
+    $ git submodule update # takes a while to clone Tcl
+    $ cd opt/tcl8.5/unix
+    $ ./configure --prefix=$(pwd)/../../tcl_dist && make && make install
+    $ cd ../../libtclpy
+    $ make TCLCONFIG=$(pwd)/../tcl_dist/lib/tclConfig.sh TCL_STUBS=0
+    $ cd ../..
+    $ PYTHONPATH=opt/libtclpy make test
+
+Now you can actually play with decompiling:
+
+    $ PYTHONPATH=.:opt/libtclpy python
+    >>> import tclpy
+    >>> import tcldis
+    >>> tclpy.eval('proc p {x} {if {$x > 5} {return 15}}')
+    ''
+    >>> bc = tcldis.getbc(proc_name='p')
+    >>> print str(bc)[:40]+'...' # internal representation
+    BC(bytearray(b'\n\x00\x01\x000&\x10i\x00...
+    >>> print tcldis.decompile(bc)
+    if {$x > 5} {
+            return 15
+    }
+

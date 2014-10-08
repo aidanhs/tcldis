@@ -49,6 +49,6 @@ clean:
 	rm -f *.so *.o
 
 test: default
-	PYTHONPATH=. python tests/test.py
+	PYTHONPATH=$$PYTHONPATH:. python tests/test.py
 
 .PHONY: clean test default
