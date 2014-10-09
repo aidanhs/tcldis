@@ -8,13 +8,15 @@
 <style>
 * { box-sizing: border-box; }
 body { margin: 5px; padding: 0 }
+#codearea, #stepsarea {
+    box-shadow: 0 0 0 2px grey inset; padding: 4px;
+}
 #codearea {
-    float: left;
-    display: table;
-    position: absolute;
+    position: fixed;
     height: 100%;
     top: 0; bottom: 0;
     width: 20%;
+    display: table;
 }
 #codearea > div {
     display: table-row;
@@ -25,6 +27,14 @@ body { margin: 5px; padding: 0 }
     position: relative;
     height: 100%;
     width: 100%;
+}
+#stepsarea {
+    position: fixed;
+    height: 100%;
+    top: 0; bottom: 0;
+    width: 70%;
+    right: 0;
+    overflow-y: scroll;
 }
 </style>
 <script type="text/jsx">
@@ -50,16 +60,17 @@ var CodeArea = React.createClass({
     getInitialState: function () {
         jsonpost('/api/default_code', '', (function (err, data) {
             this.setState({'code': data});
+            setTimeout(this.onDecompileClick, 0);
         }).bind(this));
         return {'code': ''};
     },
+    onDecompileClick: function () {
+        this.props.decompileCB(this.state.code);
+    },
     render: function () {
-        var decompileCB = (function () {
-            this.props.decompileCB(this.state.code);
-        }).bind(this);
         return (
             <div id='codearea'>
-                <div><button onClick={decompileCB}>decompile</button></div>
+                <div><button onClick={this.onDecompileClick}>decompile</button></div>
                 <div><textarea value={this.state.code} /></div>
             </div>
         );
@@ -68,8 +79,11 @@ var CodeArea = React.createClass({
 
 var DecompileSteps = React.createClass({
     render: function () {
+        var steps = this.props.steps.map(function (step) {
+            return <pre>{step}</pre>;
+        });
         return (
-            <div>{this.props.steps.toString()}</div>
+            <div id='stepsarea'>{steps}</div>
         );
     }
 });
