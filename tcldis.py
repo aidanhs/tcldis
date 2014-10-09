@@ -3,7 +3,7 @@ from __future__ import print_function
 import struct
 import copy
 import itertools
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 import _tcldis
 printbc = _tcldis.printbc
@@ -952,4 +952,6 @@ def decompile(bc):
 
 def decompile_steps(bc):
     steps = [_bblocks_fmt(bblocks) for bblocks in _decompile(bc)]
+    # Remove dupes
+    steps = list(OrderedDict.fromkeys(steps))
     return steps
