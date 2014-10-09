@@ -7,10 +7,19 @@
 <div id="tcldis"></div>
 <style>
 #codearea {
+    display: table;
+    position: absolute;
     height: 100%;
+    top: 0; bottom: 0;
     width: 20%;
 }
-#codearea > textarea {
+#codearea > div {
+    display: table-row;
+    position: relative;
+}
+#codearea > div+div { height: 100%; }
+#codearea > div > textarea {
+    position: relative;
     height: 100%;
     width: 100%;
 }
@@ -43,7 +52,10 @@ var CodeArea = React.createClass({
     },
     render: function () {
         return (
-            <div id='codearea'><textarea value={this.state.code} /></div>
+            <div id='codearea'>
+                <div><button>click me</button></div>
+                <div><textarea value={this.state.code} /></div>
+            </div>
         );
     }
 });
