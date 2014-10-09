@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 import os
+import json
+from textwrap import dedent
 
 import tclpy
 import tcldis
@@ -15,6 +17,15 @@ def index():
 @route('/static/<path:path>.js')
 def static_srv(path):
     return static_file(path + '.js', root='.')
+
+@route('/api/default_code', method='POST')
+def default_code():
+    return json.dumps(dedent('''\
+    if {$x < 15} {
+        puts 1
+    }
+    puts 2
+    '''))
 
 def start():
     # Start the server

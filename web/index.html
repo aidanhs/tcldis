@@ -5,6 +5,16 @@
 </head>
 <body>
 <div id="tcldis"></div>
+<style>
+#codearea {
+    height: 100%;
+    width: 20%;
+}
+#codearea > textarea {
+    height: 100%;
+    width: 100%;
+}
+</style>
 <script type="text/jsx">
 /** @jsx React.DOM */
 'use strict';
@@ -24,10 +34,34 @@ function jsonpost(url, data, cb) {
     r.send(JSON.stringify(data));
 }
 
+var CodeArea = React.createClass({
+    getInitialState: function () {
+        jsonpost('/api/default_code', '', (function (err, data) {
+            this.setState({'code': data});
+        }).bind(this));
+        return {'code': ''};
+    },
+    render: function () {
+        return (
+            <div id='codearea'><textarea value={this.state.code} /></div>
+        );
+    }
+});
+
+var DecompileSteps = React.createClass({
+    render: function () {
+        return (
+            <div></div>
+        );
+    }
+});
+
 var TclDisUI = React.createClass({
     render: function () {
         return (
             <div>
+                <CodeArea />
+                <DecompileSteps />
             </div>
         );
     }
