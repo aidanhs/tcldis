@@ -1,0 +1,41 @@
+<html>
+<head>
+    <script src="/static/react-0.11.2.min.js"></script>
+    <script src="/static/JSXTransformer-0.11.2.js"></script>
+</head>
+<body>
+<div id="tcldis"></div>
+<script type="text/jsx">
+/** @jsx React.DOM */
+'use strict';
+function copy(obj) {
+    return JSON.parse(JSON.stringify(obj));
+}
+function jsonpost(url, data, cb) {
+    var r = new XMLHttpRequest();
+    r.open('POST', url, true);
+    r.setRequestHeader('Content-type', 'application/json');
+    r.onreadystatechange = (function () {
+        if (r.readyState != 4) return;
+        var err = r.status !== 200; // we don't have 304's in this app
+        var data = err ? null : JSON.parse(r.responseText);
+        cb(err, data);
+    });
+    r.send(JSON.stringify(data));
+}
+
+var TclDisUI = React.createClass({
+    render: function () {
+        return (
+            <div>
+            </div>
+        );
+    }
+});
+React.renderComponent(
+    <TclDisUI />,
+    document.getElementById('tcldis')
+);
+</script>
+</body>
+</html>
