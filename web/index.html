@@ -32,9 +32,26 @@ body { margin: 5px; padding: 0 }
     position: fixed;
     height: 100%;
     top: 0; bottom: 0;
-    width: 70%;
+    width: 75%;
     right: 0;
-    overflow-y: scroll;
+    overflow-x: scroll;
+    overflow-y: hidden;
+}
+#stepsarea > div {
+    display: table;
+    height: 100%;
+}
+#stepsarea > div > div {
+    display: table-row;
+    height: 100%;
+}
+#stepsarea > div > div > div {
+    display: table-cell;
+    box-shadow: 0 0 0 1px grey inset; padding: 4px;
+}
+#stepsarea > div > div > div > pre {
+    width: 250px;
+    overflow-x: auto;
 }
 </style>
 <script type="text/jsx">
@@ -80,10 +97,10 @@ var CodeArea = React.createClass({
 var DecompileSteps = React.createClass({
     render: function () {
         var steps = this.props.steps.map(function (step) {
-            return <pre>{step}</pre>;
+            return <div><pre>{step}</pre></div>;
         });
         return (
-            <div id='stepsarea'>{steps}</div>
+            <div id='stepsarea'><div><div>{steps}</div></div></div>
         );
     }
 });
