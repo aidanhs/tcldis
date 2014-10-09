@@ -27,6 +27,13 @@ def default_code():
     puts 2
     '''))
 
+@route('/api/decompile_steps', method='POST')
+def decompile_steps():
+    tcl = request.json
+    proctcl = 'proc p {} {\n' + tcl + '\n}'
+    tclpy.eval(proctcl)
+    return json.dumps(tcldis.decompile_steps(tcldis.getbc(proc_name='p')))
+
 def start():
     # Start the server
     host = '0.0.0.0'

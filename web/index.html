@@ -6,7 +6,10 @@
 <body>
 <div id="tcldis"></div>
 <style>
+* { box-sizing: border-box; }
+body { margin: 5px; padding: 0 }
 #codearea {
+    float: left;
     display: table;
     position: absolute;
     height: 100%;
@@ -51,9 +54,12 @@ var CodeArea = React.createClass({
         return {'code': ''};
     },
     render: function () {
+        var decompileCB = (function () {
+            this.props.decompileCB(this.state.code);
+        }).bind(this);
         return (
             <div id='codearea'>
-                <div><button>click me</button></div>
+                <div><button onClick={decompileCB}>decompile</button></div>
                 <div><textarea value={this.state.code} /></div>
             </div>
         );
@@ -63,17 +69,25 @@ var CodeArea = React.createClass({
 var DecompileSteps = React.createClass({
     render: function () {
         return (
-            <div></div>
+            <div>{this.props.steps.toString()}</div>
         );
     }
 });
 
 var TclDisUI = React.createClass({
+    getInitialState: function () {
+        return {decompileSteps: []};
+    },
+    getDecompileSteps: function (code) {
+        jsonpost('/api/decompile_steps', code, (function (err, data) {
+            this.setState({'decompileSteps': data});
+        }).bind(this));
+    },
     render: function () {
         return (
             <div>
-                <CodeArea />
-                <DecompileSteps />
+                <CodeArea decompileCB={this.getDecompileSteps} />
+                <DecompileSteps steps={this.state.decompileSteps} />
             </div>
         );
     }
