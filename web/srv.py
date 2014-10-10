@@ -21,10 +21,20 @@ def static_srv(path):
 @route('/api/default_code', method='POST')
 def default_code():
     return json.dumps(dedent('''\
+    set x 5
+    puts 1
     if {$x < 15} {
         puts 1
     }
     puts 2
+    foreach {a b} [list 1 2 3 4] {
+        puts [expr {$a + $b}]
+    }
+    puts 3
+    catch {my_buggy_proc} {
+        puts "the proc failed"
+    }
+    puts 4
     '''))
 
 @route('/api/decompile_steps', method='POST')
