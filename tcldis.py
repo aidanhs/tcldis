@@ -287,6 +287,7 @@ class BCExpr(BCValue):
         'le': ('<=', 2),
         'eq': ('==', 2),
         'neq': ('!=', 2),
+        'add': ('+', 2),
         'not': ('!', 1),
     }
     def __init__(self, *args, **kwargs):
@@ -657,6 +658,7 @@ def _inst_reductions():
         'le': [[N(2)], BCExpr],
         'eq': [[N(2)], BCExpr],
         'neq': [[N(2)], BCExpr],
+        'add': [[N(2)], BCExpr],
         'not': [[N(1)], BCExpr],
         # Misc
         'concat1': [[firstop], BCConcat],
