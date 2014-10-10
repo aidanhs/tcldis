@@ -100,8 +100,22 @@ var DecompileSteps = React.createClass({
         else if (stepIdx >= stepsLength) { return stepsLength - 1; }
         else { return stepIdx; }
     },
+    handleKeyDown: function (e) {
+        var key = e.key || e.keyCode;
+        var stepIdx = this.stepIdx();
+        // 37 <-, 39 ->
+        if (key === 37) { stepIdx--; }
+        else if (key === 39) { stepIdx++; }
+        else { return true; }
+        if (!(stepIdx < 0 || stepIdx >= this.props.steps.length)) {
+            this.setState({'stepIdx': stepIdx});
+        }
+        e.preventDefault();
+        return false;
+    },
     componentDidMount: function () {
         document.addEventListener('keydown', (function (e) {
+            // Is this an event that was fired on us?
             var target = e.target;
             if (target != document && target != document.body) {
                 while (target.parentNode != document.body) {
@@ -109,17 +123,7 @@ var DecompileSteps = React.createClass({
                 }
                 if (target != this.getDOMNode()) { return; }
             }
-            var key = e.key || e.keyCode;
-            var stepIdx = this.stepIdx();
-            // 37 <-, 39 ->
-            if (key === 37) { stepIdx--; }
-            else if (key === 39) { stepIdx++; }
-            else { return true; }
-            if (!(stepIdx < 0 || stepIdx >= this.props.steps.length)) {
-                this.setState({'stepIdx': stepIdx});
-            }
-            e.preventDefault();
-            return false;
+            return this.handleKeyDown(e);
         }).bind(this));
     },
     getInitialState: function () {
