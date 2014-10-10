@@ -37,15 +37,35 @@ body { margin: 0; padding: 0; }
     overflow-x: scroll;
     overflow-y: hidden;
 }
-#stepsarea > div {
+#stepsarea > #ministeps {
+    float: left;
+    display: table;
+    width: 150px;
+}
+#stepsarea > #ministeps > div {
+    display: table-row;
+    height: 50px;
+}
+#stepsarea > #ministeps > div > pre {
+    box-shadow: 0 0 0 1px grey inset; padding: 4px;
+    margin: 5px auto 5px auto;
+    font-size: 5px;
+    width: 80px;
+    height: 50px;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+#stepsarea > #mainsteps {
+    position: absolute;
+    left: 160px;
     display: table;
     height: 100%;
 }
-#stepsarea > div > div {
+#stepsarea > #mainsteps > div {
     display: table-cell;
     box-shadow: 0 0 0 1px grey inset; padding: 4px;
 }
-#stepsarea > div > div > pre {
+#stepsarea > #mainsteps > div > pre {
     width: 250px;
     height: 100%;
     overflow-x: auto;
@@ -132,16 +152,23 @@ var DecompileSteps = React.createClass({
     render: function () {
         var stepIdx = this.stepIdx();
         var steps = [];
+        var ministeps = [];
         this.props.steps.map(function (step, i) {
+            var stepslist = steps;
+            if (i < stepIdx - 1) { stepslist = ministeps; }
             var color = (stepIdx === i ? 'lightblue' : '');
-            steps.push(
+            stepslist.push(
                 <div style={{'backgroundColor': color}}>
                     <pre>{step}</pre>
                 </div>
             );
         }, this);
+        ministeps.reverse();
         return (
-            <div id='stepsarea'><div>{steps}</div></div>
+            <div id='stepsarea'>
+                <div id='ministeps'>{ministeps}</div>
+                <div id='mainsteps'>{steps}</div>
+            </div>
         );
     }
 });
