@@ -42,15 +42,12 @@ body { margin: 0; padding: 0; }
     height: 100%;
 }
 #stepsarea > div > div {
-    display: table-row;
-    height: 100%;
-}
-#stepsarea > div > div > div {
     display: table-cell;
     box-shadow: 0 0 0 1px grey inset; padding: 4px;
 }
-#stepsarea > div > div > div > pre {
+#stepsarea > div > div > pre {
     width: 250px;
+    height: 100%;
     overflow-x: auto;
 }
 </style>
@@ -100,7 +97,7 @@ var DecompileSteps = React.createClass({
             return <div><pre>{step}</pre></div>;
         });
         return (
-            <div id='stepsarea'><div><div>{steps}</div></div></div>
+            <div id='stepsarea'><div>{steps}</div></div>
         );
     }
 });
