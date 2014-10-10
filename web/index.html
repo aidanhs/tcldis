@@ -92,10 +92,51 @@ var CodeArea = React.createClass({
 });
 
 var DecompileSteps = React.createClass({
+    /* Bounded state stepIdx */
+    stepIdx: function () {
+        var stepsLength = this.props.steps.length;
+        var stepIdx = this.state.stepIdx;
+        if (stepIdx < 0) { return 0; }
+        else if (stepIdx >= stepsLength) { return stepsLength - 1; }
+        else { return stepIdx; }
+    },
+    componentDidMount: function () {
+        document.addEventListener('keydown', (function (e) {
+            var target = e.target;
+            if (target != document && target != document.body) {
+                while (target.parentNode != document.body) {
+                    target = target.parentNode;
+                }
+                if (target != this.getDOMNode()) { return; }
+            }
+            var key = e.key || e.keyCode;
+            var stepIdx = this.stepIdx();
+            // 37 <-, 39 ->
+            if (key === 37) { stepIdx--; }
+            else if (key === 39) { stepIdx++; }
+            else { return true; }
+            if (!(stepIdx < 0 || stepIdx >= this.props.steps.length)) {
+                this.setState({'stepIdx': stepIdx});
+            }
+            e.preventDefault();
+            return false;
+        }).bind(this));
+    },
+    getInitialState: function () {
+        return {'stepIdx': 0};
+    },
     render: function () {
-        var steps = this.props.steps.map(function (step) {
-            return <div><pre>{step}</pre></div>;
-        });
+        var stepIdx = this.stepIdx();
+        var steps = this.props.steps;
+        var steps = steps.map((function (step, i) {
+            var color = '';
+            if (stepIdx == i) { color = 'lightblue'; }
+            return (
+                <div style={{'backgroundColor': color}}>
+                    <pre>{step}</pre>
+                </div>
+            );
+        }).bind(this));
         return (
             <div id='stepsarea'><div>{steps}</div></div>
         );
