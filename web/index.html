@@ -98,6 +98,9 @@ var CodeArea = React.createClass({
         }).bind(this));
         return {'code': ''};
     },
+    handleChange: function (e) {
+        this.setState({'code': e.target.value});
+    },
     onDecompileClick: function () {
         this.props.decompileCB(this.state.code);
     },
@@ -105,7 +108,7 @@ var CodeArea = React.createClass({
         return (
             <div id='codearea'>
                 <div><button onClick={this.onDecompileClick}>decompile</button></div>
-                <div><textarea value={this.state.code} /></div>
+                <div><textarea onChange={this.handleChange} value={this.state.code} /></div>
             </div>
         );
     }
