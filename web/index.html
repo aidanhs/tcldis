@@ -115,17 +115,9 @@ var CodeArea = React.createClass({
 });
 
 var DecompileSteps = React.createClass({
-    /* Bounded state stepIdx */
-    stepIdx: function () {
-        var stepsLength = this.props.steps.length;
-        var stepIdx = this.state.stepIdx;
-        if (stepIdx < 0) { return 0; }
-        else if (stepIdx >= stepsLength) { return stepsLength - 1; }
-        else { return stepIdx; }
-    },
     handleKeyDown: function (e) {
         var key = e.key || e.keyCode;
-        var stepIdx = this.stepIdx();
+        var stepIdx = this.state.stepIdx;
         // 37 <-, 39 ->
         if (key === 37) { stepIdx--; }
         else if (key === 39) { stepIdx++; }
@@ -149,11 +141,16 @@ var DecompileSteps = React.createClass({
             return this.handleKeyDown(e);
         }).bind(this));
     },
+    componentWillReceiveProps: function (nextProps) {
+        var stepIdx = nextProps.steps.length - 2;
+        if (stepIdx < 0) { stepIdx = 0; }
+        this.setState({'stepIdx': stepIdx});
+    },
     getInitialState: function () {
         return {'stepIdx': 0};
     },
     render: function () {
-        var stepIdx = this.stepIdx();
+        var stepIdx = this.state.stepIdx;
         var steps = [];
         var ministeps = [];
         this.props.steps.map(function (step, i) {
