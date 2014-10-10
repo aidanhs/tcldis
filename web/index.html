@@ -131,16 +131,15 @@ var DecompileSteps = React.createClass({
     },
     render: function () {
         var stepIdx = this.stepIdx();
-        var steps = this.props.steps;
-        var steps = steps.map((function (step, i) {
-            var color = '';
-            if (stepIdx == i) { color = 'lightblue'; }
-            return (
+        var steps = [];
+        this.props.steps.map(function (step, i) {
+            var color = (stepIdx === i ? 'lightblue' : '');
+            steps.push(
                 <div style={{'backgroundColor': color}}>
                     <pre>{step}</pre>
                 </div>
             );
-        }).bind(this));
+        }, this);
         return (
             <div id='stepsarea'><div>{steps}</div></div>
         );
