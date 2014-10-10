@@ -118,6 +118,9 @@ class Inst(InstTuple):
 
         return super(Inst, cls).__new__(cls, **d)
 
+    def __init__(self, bc, *args, **kwargs):
+        super(Inst, self).__init__(*args, **kwargs)
+
     def __repr__(self):
         return '<%s: %s %s>' % (
             self.loc if self.loc is not None else '?',
@@ -146,6 +149,8 @@ class BCValue(BCValueTuple):
         d['value'] = value
         d['stackn'] = 1
         return super(BCValue, cls).__new__(cls, **d)
+    def __init__(self, inst, value, *args, **kwargs):
+        super(BCValue, self).__init__(*args, **kwargs)
     def destack(self):
         assert self.stackn == 1
         return self._replace(stackn=self.stackn-1)
