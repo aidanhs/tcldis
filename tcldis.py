@@ -829,6 +829,8 @@ def _bblock_flow(bblocks):
             ):
             endcatch = endcatch.appendinsts(list(end.insts[0:3]))
             end = end.replaceinst((0, 3), [])
+        else:
+            assert False
         bccatch = BCCatch(None, [begin, middle, endcatch])
         bblocks[i] = begin.replaceinst((0, len(begin.insts)), [bccatch])
         bblocks[i+2] = end
