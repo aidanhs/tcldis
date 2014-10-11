@@ -159,6 +159,9 @@ var DecompileSteps = React.createClass({
     getInitialState: function () {
         return {'stepIdx': 0};
     },
+    handleShowMiniSteps: function () {
+        this.setState({'miniStepsOnly': !this.state.miniStepsOnly});
+    },
     render: function () {
         var stepIdx = this.state.stepIdx;
         var steps = [];
@@ -182,10 +185,16 @@ var DecompileSteps = React.createClass({
                 steps.unshift(<div key={stepIdx - 1}><pre> </pre></div>);
             }
         }
+        var mainstepsstyle = {};
+        if (this.state.miniStepsOnly) {
+            mainstepsstyle.display = 'none';
+        }
         return (
             <div id='stepsarea'>
-                <div id='mainsteps'>{steps}</div>
+                <div id='mainsteps' style={mainstepsstyle}>{steps}</div>
                 <div id='ministeps'>{ministeps}</div>
+                <button style={{'position': 'absolute', 'top': 0, 'left': 0}}
+                    onClick={this.handleShowMiniSteps}>Show</button>
             </div>
         );
     }
