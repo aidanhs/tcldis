@@ -10,13 +10,15 @@ import tcldis
 import bottle
 from bottle import route, request, response, static_file
 
+ROOT = os.path.dirname(__file__)
+
 @route('/')
 def index():
-    return static_file('index.html', root='.')
+    return static_file('index.html', root=ROOT)
 
 @route('/static/<path:path>.js')
 def static_srv(path):
-    return static_file(path + '.js', root='.')
+    return static_file(path + '.js', root=ROOT)
 
 @route('/api/default_code', method='POST')
 def default_code():
