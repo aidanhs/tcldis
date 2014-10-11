@@ -65,6 +65,9 @@ body { margin: 0; padding: 0; }
     overflow-x: hidden;
     overflow-y: hidden;
 }
+.selected-step {
+    background-color: lightblue;
+}
 </style>
 <script type="text/jsx">
 /** @jsx React.DOM */
@@ -150,9 +153,8 @@ var DecompileSteps = React.createClass({
         var ministeps = [];
         this.props.steps.map(function (step, i) {
             var stepslist = steps;
-            var color = (stepIdx === i ? 'lightblue' : '');
             var elt = (
-                <div style={{'backgroundColor': color}} key={i}>
+                <div className={stepIdx === i ? 'selected-step' : ''} key={i}>
                     <pre>{step}</pre>
                 </div>
             );
