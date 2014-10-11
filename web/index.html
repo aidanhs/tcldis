@@ -2,6 +2,7 @@
 <head>
     <script src="/static/react-0.11.2.min.js"></script>
     <script src="/static/JSXTransformer-0.11.2.js"></script>
+    <script src="/static/jquery-2.1.1.min.js"></script>
 </head>
 <body>
 <div id="tcldis"></div>
@@ -52,6 +53,7 @@ body { margin: 0; padding: 0; }
     overflow-x: auto;
 }
 #stepsarea > #ministeps {
+    position: absolute;
     display: table;
     height: 10%;
 }
@@ -138,6 +140,16 @@ var DecompileSteps = React.createClass({
             }
             return this.handleKeyDown(e);
         }).bind(this));
+    },
+    componentDidUpdate: function () {
+        var halfway = (
+            $('#stepsarea').width()/2 -
+            $('#ministeps > .selected-step').position().left -
+            $('#ministeps > .selected-step').width()/2
+        );
+        $('#ministeps').animate({
+            left: halfway
+        }, 100);
     },
     componentWillReceiveProps: function (nextProps) {
         var stepIdx = nextProps.steps.length - 2;
