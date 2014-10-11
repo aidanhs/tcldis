@@ -150,15 +150,17 @@ var DecompileSteps = React.createClass({
             return this.handleKeyDown(e);
         }).bind(this));
     },
-    componentDidUpdate: function () {
-        var halfway = (
-            $('#stepsarea').width()/2 -
-            $('#ministeps > .selected-step').position().left -
-            $('#ministeps > .selected-step').width()/2
-        );
-        $('#ministeps').animate({
-            left: halfway
-        }, 100);
+    componentDidUpdate: function (prevProps, prevState) {
+        if (prevState.stepIdx !== this.state.stepIdx) {
+            var halfway = (
+                $('#stepsarea').width()/2 -
+                $('#ministeps > .selected-step').position().left -
+                $('#ministeps > .selected-step').width()/2
+            );
+            $('#ministeps').animate({
+                left: halfway
+            }, 100);
+        }
     },
     componentWillReceiveProps: function (nextProps) {
         var stepIdx = nextProps.steps.length - 2;
