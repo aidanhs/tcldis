@@ -34,32 +34,13 @@ body { margin: 0; padding: 0; }
     top: 0; bottom: 0;
     width: 80%;
     right: 0;
-    overflow-x: scroll;
-    overflow-y: hidden;
-}
-#stepsarea > #ministeps {
-    float: left;
-    display: table;
-    width: 150px;
-}
-#stepsarea > #ministeps > div {
-    display: table-row;
-    height: 50px;
-}
-#stepsarea > #ministeps > div > pre {
-    box-shadow: 0 0 0 1px grey inset; padding: 4px;
-    margin: 5px auto 5px auto;
-    font-size: 5px;
-    width: 80px;
-    height: 50px;
     overflow-x: hidden;
     overflow-y: hidden;
 }
 #stepsarea > #mainsteps {
-    position: absolute;
-    left: 160px;
     display: table;
-    height: 100%;
+    height: 90%;
+    margin: 0 auto 0 auto;
 }
 #stepsarea > #mainsteps > div {
     display: table-cell;
@@ -69,6 +50,20 @@ body { margin: 0; padding: 0; }
     width: 250px;
     height: 100%;
     overflow-x: auto;
+}
+#stepsarea > #ministeps {
+    display: table;
+    height: 10%;
+}
+#stepsarea > #ministeps > div {
+    display: table-cell;
+}
+#stepsarea > #ministeps > div > pre {
+    box-shadow: 0 0 0 1px grey inset; padding: 4px;
+    font-size: 5px;
+    width: 80px;
+    overflow-x: hidden;
+    overflow-y: hidden;
 }
 </style>
 <script type="text/jsx">
@@ -155,19 +150,20 @@ var DecompileSteps = React.createClass({
         var ministeps = [];
         this.props.steps.map(function (step, i) {
             var stepslist = steps;
-            if (i < stepIdx - 1) { stepslist = ministeps; }
             var color = (stepIdx === i ? 'lightblue' : '');
-            stepslist.push(
+            var elt = (
                 <div style={{'backgroundColor': color}}>
                     <pre>{step}</pre>
                 </div>
             );
+            ministeps.push(elt);
+            if (i < stepIdx - 1 || i > stepIdx + 1) { return; }
+            steps.push(elt);
         }, this);
-        ministeps.reverse();
         return (
             <div id='stepsarea'>
-                <div id='ministeps'>{ministeps}</div>
                 <div id='mainsteps'>{steps}</div>
+                <div id='ministeps'>{ministeps}</div>
             </div>
         );
     }
