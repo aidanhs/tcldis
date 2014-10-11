@@ -119,15 +119,23 @@ var DecompileSteps = React.createClass({
     handleKeyDown: function (e) {
         var key = e.key || e.keyCode;
         var stepIdx = this.state.stepIdx;
-        // 37 <-, 39 ->
-        if (key === 37) { stepIdx--; }
-        else if (key === 39) { stepIdx++; }
+        // 37 <-, 38 ^, 39 ->, 40 \/
+        if (key === 37) { this.changeStepIdx(-1); }
+        else if (key === 38) { this.showMiniSteps(true); }
+        else if (key === 39) { this.changeStepIdx(1); }
+        else if (key === 40) { this.showMiniSteps(false); }
         else { return true; }
+        e.preventDefault();
+        return false;
+    },
+    showMiniSteps: function (shouldShow) {
+        this.setState({'miniStepsOnly': shouldShow});
+    },
+    changeStepIdx: function (idxChange) {
+        var stepIdx = this.state.stepIdx + idxChange;
         if (!(stepIdx < 0 || stepIdx >= this.props.steps.length)) {
             this.setState({'stepIdx': stepIdx});
         }
-        e.preventDefault();
-        return false;
     },
     componentDidMount: function () {
         document.addEventListener('keydown', (function (e) {
@@ -159,9 +167,6 @@ var DecompileSteps = React.createClass({
     },
     getInitialState: function () {
         return {'stepIdx': 0};
-    },
-    handleShowMiniSteps: function () {
-        this.setState({'miniStepsOnly': !this.state.miniStepsOnly});
     },
     render: function () {
         var stepIdx = this.state.stepIdx;
