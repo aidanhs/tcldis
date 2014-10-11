@@ -168,7 +168,7 @@ var DecompileSteps = React.createClass({
         this.setState({'stepIdx': stepIdx});
     },
     getInitialState: function () {
-        return {'stepIdx': 0};
+        return {'stepIdx': 0, 'miniStepsOnly': false};
     },
     render: function () {
         var stepIdx = this.state.stepIdx;
@@ -201,8 +201,6 @@ var DecompileSteps = React.createClass({
             <div id='stepsarea'>
                 <div id='mainsteps' style={mainstepsstyle}>{steps}</div>
                 <div id='ministeps'>{ministeps}</div>
-                <button style={{'position': 'absolute', 'top': 0, 'left': 0}}
-                    onClick={this.handleShowMiniSteps}>Show</button>
             </div>
         );
     }
