@@ -152,7 +152,7 @@ var DecompileSteps = React.createClass({
             var stepslist = steps;
             var color = (stepIdx === i ? 'lightblue' : '');
             var elt = (
-                <div style={{'backgroundColor': color}}>
+                <div style={{'backgroundColor': color}} key={i}>
                     <pre>{step}</pre>
                 </div>
             );
