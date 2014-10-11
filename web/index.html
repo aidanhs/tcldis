@@ -55,19 +55,20 @@ body { margin: 0; padding: 0; }
 #stepsarea > #ministeps {
     position: absolute;
     display: table;
-    height: 10%;
 }
 #stepsarea > #ministeps > div {
     display: table-cell;
 }
 #stepsarea > #ministeps > div > pre {
-    box-shadow: 0 0 0 1px grey inset; padding: 4px;
+    box-shadow: 0 0 0 1px grey inset; padding: 2px;
     font-size: 5px;
     width: 80px;
     overflow-x: hidden;
     overflow-y: hidden;
 }
-.selected-step {
+/* Ideally only one rule, but can't figure out how to make ministeps
+ * table-cell div shrink in height to same size as child pre */
+#mainsteps > .selected-step, #ministeps > .selected-step > pre {
     background-color: lightblue;
 }
 </style>
