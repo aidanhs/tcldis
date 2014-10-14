@@ -724,7 +724,7 @@ def _bblock_reduce(bc, bblock):
 
         return bblock
 
-    return False
+    return bblock
 
 def _get_targets(bblocks):
     targets = [target for target in [
@@ -938,7 +938,7 @@ def _decompile(bc):
     change = True
     while change:
         change = False
-        reducedblocks = [_bblock_reduce(bc, bblock) or bblock for bblock in bblocks]
+        reducedblocks = [_bblock_reduce(bc, bblock) for bblock in bblocks]
         change = any([b1 is not b2 for b1, b2 in zip(bblocks, reducedblocks)])
         bblocks = reducedblocks
         change = change or _bblock_join(bblocks)
