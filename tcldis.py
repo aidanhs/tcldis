@@ -730,7 +730,7 @@ def _bblock_reduce(bc, bblock):
         else:
             continue # No change, continue scanning basic blcok
 
-        return bblock, changes
+        break
 
     return bblock, changes
 
