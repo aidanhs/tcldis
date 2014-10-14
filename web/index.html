@@ -152,10 +152,10 @@ var DecompileSteps = React.createClass({
     },
     componentDidUpdate: function (prevProps, prevState) {
         if (prevState.stepIdx !== this.state.stepIdx) {
+            var stepIdx = this.state.stepIdx;
+            var miniwidth = $('#ministeps > div:first').width();
             var halfway = (
-                $('#stepsarea').width()/2 -
-                $('#ministeps > .selected-step').position().left -
-                $('#ministeps > .selected-step').width()/2
+                $('#stepsarea').width()/2 - ((stepIdx * miniwidth) + (miniwidth / 2))
             );
             $('#ministeps').animate({
                 left: halfway
