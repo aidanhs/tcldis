@@ -55,6 +55,7 @@ body { margin: 0; padding: 0; }
 #stepsarea > #ministeps {
     position: absolute;
     display: table;
+    margin-left: 50%;
 }
 #stepsarea > #ministeps > div {
     display: table-cell;
@@ -154,9 +155,7 @@ var DecompileSteps = React.createClass({
         if (prevState.stepIdx !== this.state.stepIdx) {
             var stepIdx = this.state.stepIdx;
             var miniwidth = $('#ministeps > div:first').width();
-            var halfway = (
-                $('#stepsarea').width()/2 - ((stepIdx * miniwidth) + (miniwidth / 2))
-            );
+            var halfway = -((stepIdx * miniwidth) + (miniwidth / 2));
             $('#ministeps').animate({
                 left: halfway
             }, 100);
