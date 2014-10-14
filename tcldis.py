@@ -525,11 +525,13 @@ class BBlock(object):
         return self.replaceinst((len(self.insts), len(self.insts)), insts)
     def popinst(self):
         return self.replaceinst(len(self.insts)-1, [])
-    def fmt(self):
-        return '\n'.join([
+    def fmt_insts(self):
+        return [
             inst.fmt() if not isinstance(inst, Inst) else str(inst)
             for inst in self.insts
-        ])
+        ]
+    def fmt(self):
+        return '\n'.join(self.fmt_insts())
 
 ########################
 # Functions start here #
@@ -687,6 +689,7 @@ def _bblock_hack(bc, bblock):
     """
     # 'variable' does not push a result so the Tcl compiler inserts a push.
     variableis = []
+    changes = []
     for i, inst in enumerate(bblock.insts):
         if not isinstance(inst, Inst): continue
         if not inst.name == 'variable': continue
@@ -695,18 +698,21 @@ def _bblock_hack(bc, bblock):
         variableis.append(i)
     for i in reversed(variableis):
         bblock = bblock.replaceinst(i+1, [])
-    return bblock
+        changes.append((i+1, None))
+    return bblock, changes
 
 def _bblock_reduce(bc, bblock):
     """
     For the given basic block, attempt to reduce all instructions to my higher
     level representations.
     """
+    changes = []
     for i, inst in enumerate(bblock.insts):
         if not isinstance(inst, Inst): continue
 
         if inst.name in ['push1', 'push4']:
             bblock = bblock.replaceinst(i, [BCLiteral(inst, bc.literal(inst.ops[0]))])
+            changes.append((i, i))
 
         elif inst.name in INST_REDUCTIONS:
             IRED = INST_REDUCTIONS[inst.name]
@@ -717,14 +723,16 @@ def _bblock_reduce(bc, bblock):
             newinsts = redfn(inst, arglist)
             if type(newinsts) is not list:
                 newinsts = [newinsts]
-            bblock = bblock.replaceinst((i-len(arglist), i+1), newinsts)
+            irange = (i-len(arglist), i+1)
+            bblock = bblock.replaceinst(irange, newinsts)
+            changes.append((irange, (irange[0], irange[0]+len(newinsts))))
 
         else:
             continue # No change, continue scanning basic blcok
 
-        return bblock
+        return bblock, changes
 
-    return bblock
+    return bblock, changes
 
 def _get_targets(bblocks):
     targets = [target for target in [
@@ -924,6 +932,9 @@ def _bblock_join(bblocks):
 
     return False
 
+def unzip(lst):
+    return [list(v) for v in zip(*lst)]
+
 def _decompile(bc):
     """
     Given some bytecode and literals, attempt to decompile to tcl.
@@ -931,19 +942,22 @@ def _decompile(bc):
     assert isinstance(bc, BC)
     insts = getinsts(bc)
     bblocks = _bblock_create(insts)
-    yield bblocks[:]
+    yield bblocks[:], [] * len(bblocks)
     # Reduce bblock logic
-    bblocks = [_bblock_hack(bc, bblock) for bblock in bblocks]
-    yield bblocks[:]
+    hackedbblocks, changes = unzip([_bblock_hack(bc, bblock) for bblock in bblocks])
+    if any([b1 is not b2 for b1, b2 in zip(bblocks, hackedbblocks)]):
+        yield bblocks[:], changes
+    bblocks = hackedbblocks
     change = True
     while change:
         change = False
-        reducedblocks = [_bblock_reduce(bc, bblock) for bblock in bblocks]
+        reducedblocks, changes = unzip([_bblock_reduce(bc, bblock) for bblock in bblocks])
         change = any([b1 is not b2 for b1, b2 in zip(bblocks, reducedblocks)])
         bblocks = reducedblocks
+        if not change: changes = []
         change = change or _bblock_join(bblocks)
         change = change or _bblock_flow(bblocks)
-        if change: yield bblocks[:]
+        if change: yield bblocks[:], changes
 
 def _bblocks_fmt(bblocks):
     outstr = ''
@@ -955,12 +969,23 @@ def _bblocks_fmt(bblocks):
 
 def decompile(bc):
     bblocks = None
-    for bblocks in _decompile(bc):
+    for bblocks, _ in _decompile(bc):
         pass
     return _bblocks_fmt(bblocks)
 
 def decompile_steps(bc):
-    steps = [_bblocks_fmt(bblocks) for bblocks in _decompile(bc)]
-    # Remove dupes
-    steps = list(OrderedDict.fromkeys(steps))
-    return steps
+    steps = []
+    changes = []
+    for i, (bblocks, bbschanges) in enumerate(_decompile(bc)):
+        step = []
+        if bbschanges == []:
+            bbschanges = [[]] * len(bblocks)
+        assert len(bblocks) == len(bbschanges)
+        for j, (bblock, bbchanges) in enumerate(zip(bblocks, bbschanges)):
+            step.append(bblock.fmt_insts())
+            for lfrom, lto in bbchanges:
+                assert type(lfrom) in [tuple, int]
+                assert type(lto) in [tuple, int]
+                changes.append(((i-1, j, lfrom), (i, j, lto)))
+        steps.append(step)
+    return steps, changes
