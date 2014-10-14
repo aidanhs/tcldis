@@ -76,6 +76,8 @@ body { margin: 0; padding: 0; }
 <script type="text/jsx">
 /** @jsx React.DOM */
 'use strict';
+var miniwidth = 80;
+
 function copy(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
@@ -151,16 +153,6 @@ var DecompileSteps = React.createClass({
             return this.handleKeyDown(e);
         }).bind(this));
     },
-    componentDidUpdate: function (prevProps, prevState) {
-        if (prevState.stepIdx !== this.state.stepIdx) {
-            var stepIdx = this.state.stepIdx;
-            var miniwidth = $('#ministeps > div:first').width();
-            var halfway = -((stepIdx * miniwidth) + (miniwidth / 2));
-            $('#ministeps').animate({
-                left: halfway
-            }, 100);
-        }
-    },
     componentWillReceiveProps: function (nextProps) {
         var stepIdx = nextProps.steps.length - 2;
         if (stepIdx < 0) { stepIdx = 0; }
@@ -196,10 +188,16 @@ var DecompileSteps = React.createClass({
         if (this.state.miniStepsOnly) {
             mainstepsstyle.display = 'none';
         }
+        // Put the selected ministep halfway along the bottom
+        var halfway = -((stepIdx * miniwidth) + (miniwidth / 2));
+        var ministepsstyle = {
+            'transition': 'left 0.2s',
+            'left': halfway + 'px'
+        };
         return (
             <div id='stepsarea'>
                 <div id='mainsteps' style={mainstepsstyle}>{steps}</div>
-                <div id='ministeps'>{ministeps}</div>
+                <div id='ministeps' style={ministepsstyle}>{ministeps}</div>
             </div>
         );
     }
