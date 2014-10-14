@@ -169,7 +169,7 @@ var DecompileSteps = React.createClass({
             var stepslist = steps;
             var elt = (
                 <div className={stepIdx === i ? 'selected-step' : ''} key={i}>
-                    <pre>{step}</pre>
+                    <pre>{step.map(function (bb) {return bb.join('\n');}).join('\n')}</pre>
                 </div>
             );
             ministeps.push(elt);
@@ -207,18 +207,18 @@ var DecompileSteps = React.createClass({
 
 var TclDisUI = React.createClass({
     getInitialState: function () {
-        return {decompileSteps: []};
+        return {'steps': [], 'changes': []};
     },
     getDecompileSteps: function (code) {
         jsonpost('/api/decompile_steps', code, (function (err, data) {
-            this.setState({'decompileSteps': data});
+            this.setState(data);
         }).bind(this));
     },
     render: function () {
         return (
             <div>
                 <CodeArea decompileCB={this.getDecompileSteps} />
-                <DecompileSteps steps={this.state.decompileSteps} />
+                <DecompileSteps steps={this.state.steps} changes={this.state.changes} />
             </div>
         );
     }

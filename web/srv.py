@@ -45,10 +45,7 @@ def decompile_steps():
     proctcl = 'proc p {} {\n' + tcl + '\n}'
     tclpy.eval(proctcl)
     steps, changes = tcldis.decompile_steps(tcldis.getbc(proc_name='p'))
-    return json.dumps([
-        '\n'.join(['\n'.join(bblock) for bblock in bblocks])
-        for bblocks in steps
-    ])
+    return json.dumps({'steps': steps, 'changes': changes})
 
 def start():
     # Start the server
