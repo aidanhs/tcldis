@@ -184,9 +184,11 @@ var DecompileSteps = React.createClass({
                 steps.unshift(<div key={stepIdx - 1}><pre> </pre></div>);
             }
         }
-        var mainstepsstyle = {};
+        // Fold up the main steps if we're not displaying them
+        var mainstepsstyle = {'transition': 'height 0.5s, opacity 0.5s'};
         if (this.state.miniStepsOnly) {
-            mainstepsstyle.display = 'none';
+            mainstepsstyle.height = '0';
+            mainstepsstyle.opacity = '0';
         }
         // Put the selected ministep halfway along the bottom
         var halfway = -((stepIdx * miniwidth) + (miniwidth / 2));
