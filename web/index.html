@@ -161,7 +161,7 @@ var CodeArea = React.createClass({
 
 var DecompileSteps = React.createClass({
     handleKeyDown: function (e) {
-        var key = e.key || e.keyCode;
+        var key = e.keyCode || e.charCode;
         var stepIdx = this.state.stepIdx;
         // 37 <-, 38 ^, 39 ->, 40 \/
         if (key === 37) { this.changeStepIdx(-1); }
