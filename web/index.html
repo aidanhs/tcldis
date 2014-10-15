@@ -229,31 +229,66 @@ var DecompileSteps = React.createClass({
             bbi = 0;
             ii = 0;
             step = ss[si];
-            while (bbi !== c[1][0] || ii !== c[1][1][0]) {
+            var starty1, starty2;
+            while (true) {
+                if (bbi === c[1][0] && ii === c[1][1][0]) {
+                    starty1 = numlines;
+                    if (c[1][1][0] === c[1][1][1]) {
+                        starty2 = numlines;
+                        break;
+                    }
+                }
                 numlines++;
                 numlines += step[bbi][ii].split('\n').length - 1;
+                if (bbi === c[1][0] && ii === c[1][1][1] - 1) {
+                    if (c[1][1][0] !== c[1][1][1]) {
+                        starty2 = numlines;
+                    } else {
+                        starty1 = starty2 = numlines;
+                    }
+                    break;
+                }
                 if (ii < step[bbi].length - 1) { ii++; }
                 else if (bbi < step.length - 1) { bbi++; ii = 0; }
                 else { throw Error(); }
             }
-            var starty = numlines * fontsize;
 
             numlines = 0;
             bbi = 0;
             ii = 0;
             step = ss[si+1];
-            while (bbi !== c[2][0] || ii !== c[2][1][0]) {
+            var endy1, endy2;
+            while (true) {
+                if (bbi === c[2][0] && ii === c[2][1][0]) {
+                    endy1 = numlines;
+                    if (c[2][1][0] === c[2][1][1]) {
+                        endy2 = numlines;
+                        break;
+                    }
+                }
                 numlines++;
                 numlines += step[bbi][ii].split('\n').length - 1;
+                if (bbi === c[2][0] && ii === c[2][1][1] - 1) {
+                    if (c[2][1][0] !== c[2][1][1]) {
+                        endy2 = numlines;
+                    } else {
+                        endy1 = endy2 = numlines;
+                    }
+                    break;
+                }
                 if (ii < step[bbi].length - 1) { ii++; }
                 else if (bbi < step.length - 1) { bbi++; ii = 0; }
                 else { throw Error(); }
             }
-            var endy = numlines * fontsize;
 
-            return (
-                <line x1='0' y1={starty} x2={padwidth} y2={endy} stroke='black'/>
-            );
+            starty1 *= fontsize;
+            starty2 *= fontsize;
+            endy1 *= fontsize;
+            endy2 *= fontsize;
+            return [
+                <line x1='0' y1={starty1} x2={padwidth} y2={endy1} stroke='black'/>,
+                <line x1='0' y1={starty2} x2={padwidth} y2={endy2} stroke='black'/>
+            ];
         }
 
         // Add the step padding
