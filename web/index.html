@@ -300,13 +300,13 @@ var DecompileSteps = React.createClass({
             endy2 *= fontsize;
             var p = padwidth;
             return [
-                <line x1={2*p} y1={starty1} x2={3*p} y2={endy1}/>,
-                <line x1={2*p} y1={starty2} x2={3*p} y2={endy2}/>,
+                <line key={1} x1={2*p} y1={starty1} x2={3*p} y2={endy1}/>,
+                <line key={2} x1={2*p} y1={starty2} x2={3*p} y2={endy2}/>,
 
-                <line x1={0} y1={starty1} x2={2*p} y2={starty1} className='guideLine'/>,
-                <line x1={0} y1={starty2} x2={2*p} y2={starty2} className='guideLine'/>,
-                <line x1={3*p} y1={endy1} x2={5*p} y2={endy1}   className='guideLine'/>,
-                <line x1={3*p} y1={endy2} x2={5*p} y2={endy2}   className='guideLine'/>
+                <line key={3} x1={0} y1={starty1} x2={2*p} y2={starty1} className='guideLine'/>,
+                <line key={4} x1={0} y1={starty2} x2={2*p} y2={starty2} className='guideLine'/>,
+                <line key={5} x1={3*p} y1={endy1} x2={5*p} y2={endy1}   className='guideLine'/>,
+                <line key={6} x1={3*p} y1={endy2} x2={5*p} y2={endy2}   className='guideLine'/>
             ];
         }
 
@@ -325,10 +325,10 @@ var DecompileSteps = React.createClass({
             var shape = <g key={lines.length}>{linefromchange(c, this.props.steps)}</g>;
             lines.push(shape);
         }, this);
-        steps.splice(1, 0, <div className="step-padding"><div><svg>
+        steps.splice(1, 0, <div key='pad1' className="step-padding"><div><svg>
             {lines1}
         </svg></div></div>);
-        steps.splice(3, 0, <div className="step-padding"><div><svg>
+        steps.splice(3, 0, <div key='pad2' className="step-padding"><div><svg>
             {lines2}
         </svg></div></div>);
         // Fold up the main steps if we're not displaying them
