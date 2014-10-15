@@ -984,8 +984,11 @@ def decompile_steps(bc):
         for j, (bblock, bbchanges) in enumerate(zip(bblocks, bbschanges)):
             step.append(bblock.fmt_insts())
             for lfrom, lto in bbchanges:
-                assert type(lfrom) in [tuple, int]
-                assert type(lto) in [tuple, int]
-                changes.append(((i-1, j, lfrom), (i, j, lto)))
+                if type(lfrom) is int:
+                    lfrom = (lfrom, lfrom + 1)
+                if type(lto) is int:
+                    lto = (lto, lto + 1)
+                assert type(lfrom) is type(lto) is tuple
+                changes.append((i-1, (j, lfrom), (j, lto)))
         steps.append(step)
     return steps, changes
