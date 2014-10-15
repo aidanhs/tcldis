@@ -10,7 +10,9 @@
 * {
     box-sizing: border-box;
     font-size: 12px;
-    line-height: 1.2;
+    /* make sure this makes exact numbers when multiplied by the font-sizes
+     * in this app */
+    line-height: 1.25;
 }
 body { margin: 0; padding: 0; }
 #codearea, #stepsarea {
@@ -73,8 +75,9 @@ body { margin: 0; padding: 0; }
     /* Have to remove from layout flow otherwise collapsing height to 0
      * stubbornly refuses to work. Otherwise we'd merge with the rule above. */
     position: absolute;
-    width: 100%;
+    width: 500%;
     height: 100%;
+    left: -200%;
 }
 #stepsarea > #ministeps {
     position: absolute;
@@ -86,7 +89,7 @@ body { margin: 0; padding: 0; }
 }
 #stepsarea > #ministeps > div > pre {
     box-shadow: 0 0 0 1px grey inset; padding: 2px;
-    font-size: 5px;
+    font-size: 4px;
     width: 80px;
     overflow-x: hidden;
     overflow-y: hidden;
@@ -105,7 +108,7 @@ body { margin: 0; padding: 0; }
 'use strict';
 var miniwidth = 80;
 var padwidth = 50;
-var linemult = 1.2;
+var linemult = 1.25;
 var fontsize = 12 * linemult;
 
 function copy(obj) {
@@ -287,9 +290,15 @@ var DecompileSteps = React.createClass({
             starty2 *= fontsize;
             endy1 *= fontsize;
             endy2 *= fontsize;
+            var p = padwidth;
             return [
-                <line x1='0' y1={starty1} x2={padwidth} y2={endy1} stroke='black'/>,
-                <line x1='0' y1={starty2} x2={padwidth} y2={endy2} stroke='black'/>
+                <line x1={2*p} y1={starty1} x2={3*p} y2={endy1} strokeWidth='1' stroke='black'/>,
+                <line x1={2*p} y1={starty2} x2={3*p} y2={endy2} strokeWidth='1' stroke='black'/>,
+
+                <line x1={0} y1={starty1} x2={2*p} y2={starty1} strokeWidth='1' stroke='gray'/>,
+                <line x1={0} y1={starty2} x2={2*p} y2={starty2} strokeWidth='1' stroke='gray'/>,
+                <line x1={3*p} y1={endy1} x2={5*p} y2={endy1}   strokeWidth='1' stroke='gray'/>,
+                <line x1={3*p} y1={endy2} x2={5*p} y2={endy2}   strokeWidth='1' stroke='gray'/>
             ];
         }
 
