@@ -199,10 +199,10 @@ var DecompileSteps = React.createClass({
             var stepslist = steps;
             var elt = (
                 <div className={stepIdx === si ? 'selected-step' : ''} key={si}>
-                    <pre>{step.map(function (bb) {
+                    <pre>{step.map(function (bb, bbi) {
                         return (
-                            <span>{bb.map(function (inst) {
-                                return <span>{inst+'\n'}</span>;
+                            <span key={bbi}>{bb.map(function (inst, ii) {
+                                return <span key={ii}>{inst+'\n'}</span>;
                             })}</span>
                         );
                     })}</pre>
@@ -305,7 +305,8 @@ var DecompileSteps = React.createClass({
             } else {
                 return;
             }
-            lines.push(linefromchange(c, this.props.steps));
+            var shape = <g key={lines.length}>{linefromchange(c, this.props.steps)}</g>;
+            lines.push(shape);
         }, this);
         steps.splice(1, 0, <div className="step-padding"><div><svg>
             {lines1}
