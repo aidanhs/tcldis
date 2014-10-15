@@ -7,7 +7,10 @@
 <body>
 <div id="tcldis"></div>
 <style>
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+    font-size: 12px;
+}
 body { margin: 0; padding: 0; }
 #codearea, #stepsarea {
     box-shadow: 0 0 0 2px grey inset; padding: 4px;
@@ -87,6 +90,9 @@ body { margin: 0; padding: 0; }
     overflow-x: hidden;
     overflow-y: hidden;
 }
+#stepsarea > #ministeps > div > pre span {
+    font-size: inherit;
+}
 /* Ideally only one rule, but can't figure out how to make ministeps
  * table-cell div shrink in height to same size as child pre */
 #mainsteps > .selected-step, #ministeps > .selected-step > pre {
@@ -97,6 +103,8 @@ body { margin: 0; padding: 0; }
 /** @jsx React.DOM */
 'use strict';
 var miniwidth = 80;
+var padwidth = 50;
+var fontsize = 12;
 
 function copy(obj) {
     return JSON.parse(JSON.stringify(obj));
@@ -185,15 +193,21 @@ var DecompileSteps = React.createClass({
         var stepIdx = this.state.stepIdx;
         var steps = [];
         var ministeps = [];
-        this.props.steps.map(function (step, i) {
+        this.props.steps.map(function (step, si) {
             var stepslist = steps;
             var elt = (
-                <div className={stepIdx === i ? 'selected-step' : ''} key={i}>
-                    <pre>{step.map(function (bb) {return bb.join('\n');}).join('\n')}</pre>
+                <div className={stepIdx === si ? 'selected-step' : ''} key={si}>
+                    <pre>{step.map(function (bb) {
+                        return (
+                            <span>{bb.map(function (inst) {
+                                return <span>{inst+'\n'}</span>;
+                            })}</span>
+                        );
+                    })}</pre>
                 </div>
             );
             ministeps.push(elt);
-            if (i < stepIdx - 1 || i > stepIdx + 1) { return; }
+            if (si < stepIdx - 1 || si > stepIdx + 1) { return; }
             steps.push(elt);
         }, this);
         // Add blank divs at beginning and end
@@ -204,10 +218,63 @@ var DecompileSteps = React.createClass({
                 steps.unshift(<div key={stepIdx - 1}><pre> </pre></div>);
             }
         }
+
+        function linefromchange(change, steps) {
+            var numlines, bbi, ii, step,
+                c = change,
+                ss = steps,
+                si = c[0];
+
+            numlines = 0;
+            bbi = 0;
+            ii = 0;
+            step = ss[si];
+            while (bbi !== c[1][0] || ii !== c[1][1][0]) {
+                numlines++;
+                numlines += step[bbi][ii].split('\n').length - 1;
+                if (ii < step[bbi].length - 1) { ii++; }
+                else if (bbi < step.length - 1) { bbi++; ii = 0; }
+                else { throw Error(); }
+            }
+            var starty = numlines * fontsize;
+
+            numlines = 0;
+            bbi = 0;
+            ii = 0;
+            step = ss[si+1];
+            while (bbi !== c[2][0] || ii !== c[2][1][0]) {
+                numlines++;
+                numlines += step[bbi][ii].split('\n').length - 1;
+                if (ii < step[bbi].length - 1) { ii++; }
+                else if (bbi < step.length - 1) { bbi++; ii = 0; }
+                else { throw Error(); }
+            }
+            var endy = numlines * fontsize;
+
+            return (
+                <line x1='0' y1={starty} x2={padwidth} y2={endy} stroke='black'/>
+            );
+        }
+
         // Add the step padding
+        var lines1 = [], lines2 = [];
+        var changes = this.props.changes.map(function (c) {
+            var step = c[0];
+            var lines;
+            if (step === stepIdx - 1) {
+                lines = lines1;
+            } else if (step === stepIdx) {
+                lines = lines2;
+            } else {
+                return;
+            }
+            lines.push(linefromchange(c, this.props.steps));
+        }, this);
         steps.splice(1, 0, <div className="step-padding"><div><svg>
+            {lines1}
         </svg></div></div>);
         steps.splice(3, 0, <div className="step-padding"><div><svg>
+            {lines2}
         </svg></div></div>);
         // Fold up the main steps if we're not displaying them
         var mainstepsstyle = {'transition': 'height 0.5s, opacity 0.5s'};
