@@ -43,16 +43,34 @@ body { margin: 0; padding: 0; }
     display: table;
     height: 90%;
     margin: 0 auto 0 auto;
-    border-spacing: 50px 5px;
+    border-spacing: 0 5px;
 }
 #stepsarea > #mainsteps > div {
     display: table-cell;
-    box-shadow: 0 0 0 1px grey inset; padding: 4px;
+    box-shadow: 0 0 0 1px grey inset;
+    padding: 4px;
+    vertical-align: top;
 }
 #stepsarea > #mainsteps > div > pre {
     width: 250px;
     height: 100%;
     overflow-x: auto;
+}
+#stepsarea > #mainsteps > div.step-padding {
+    padding-left: 0;
+    padding-right: 0;
+}
+.step-padding > div {
+    position: relative;
+    width: 50px;
+    height: 100%;
+}
+.step-padding > div > svg {
+    /* Have to remove from layout flow otherwise collapsing height to 0
+     * stubbornly refuses to work. Otherwise we'd merge with the rule above. */
+    position: absolute;
+    width: 100%;
+    height: 100%;
 }
 #stepsarea > #ministeps {
     position: absolute;
@@ -186,6 +204,11 @@ var DecompileSteps = React.createClass({
                 steps.unshift(<div key={stepIdx - 1}><pre> </pre></div>);
             }
         }
+        // Add the step padding
+        steps.splice(1, 0, <div className="step-padding"><div><svg>
+        </svg></div></div>);
+        steps.splice(3, 0, <div className="step-padding"><div><svg>
+        </svg></div></div>);
         // Fold up the main steps if we're not displaying them
         var mainstepsstyle = {'transition': 'height 0.5s, opacity 0.5s'};
         if (this.state.miniStepsOnly) {
