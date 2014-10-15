@@ -14,7 +14,9 @@
      * in this app */
     line-height: 1.25;
 }
-body { margin: 0; padding: 0; }
+html { height: 100%; }
+body { height: 100%; width: 100%; margin: 0; padding: 0; }
+pre { margin: 0; }
 #codearea, #stepsarea {
     box-shadow: 0 0 0 2px grey inset; padding: 4px;
 }
@@ -53,14 +55,21 @@ body { margin: 0; padding: 0; }
 }
 #stepsarea > #mainsteps > div {
     display: table-cell;
+    position: relative;
     box-shadow: 0 0 0 1px grey inset;
     padding: 4px;
     vertical-align: top;
-}
-#stepsarea > #mainsteps > div > pre {
-    width: 250px;
     height: 100%;
+}
+#stepsarea > #mainsteps > div.step {
+    width: 250px;
+}
+#stepsarea > #mainsteps > div.step > pre {
+    position: absolute;
+    top: 0; bottom: 0; left: 0; right: 0;
+    margin: 4px;
     overflow-x: auto;
+    overflow-y: auto;
 }
 #stepsarea > #mainsteps > div.step-padding {
     padding-left: 0;
@@ -208,8 +217,10 @@ var DecompileSteps = React.createClass({
         var ministeps = [];
         this.props.steps.map(function (step, si) {
             var stepslist = steps;
+            var className = 'step';
+            if (stepIdx === si) { className += ' selected-step'; }
             var elt = (
-                <div className={stepIdx === si ? 'selected-step' : ''} key={si}>
+                <div className={className} key={si}>
                     <pre>{step.map(function (bb, bbi) {
                         return (
                             <span key={bbi}>{bb.map(function (inst, ii) {
@@ -226,9 +237,9 @@ var DecompileSteps = React.createClass({
         // Add blank divs at beginning and end
         if (steps.length === 2) {
             if (steps[1].props.key != stepIdx + 1) {
-                steps.push(<div key={stepIdx + 1}><pre> </pre></div>);
+                steps.push(<div className='step' key={stepIdx + 1}><pre> </pre></div>);
             } else if (steps[0].props.key != stepIdx - 1) {
-                steps.unshift(<div key={stepIdx - 1}><pre> </pre></div>);
+                steps.unshift(<div className='step' key={stepIdx - 1}><pre> </pre></div>);
             }
         }
 
