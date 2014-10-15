@@ -79,6 +79,14 @@ body { margin: 0; padding: 0; }
     height: 100%;
     left: -200%;
 }
+line {
+    stroke-width: 1;
+    stroke: black;
+}
+line.guideLine {
+    stroke-width: 0.5;
+    stroke-dasharray: 5, 5;
+}
 #stepsarea > #ministeps {
     position: absolute;
     display: table;
@@ -292,13 +300,13 @@ var DecompileSteps = React.createClass({
             endy2 *= fontsize;
             var p = padwidth;
             return [
-                <line x1={2*p} y1={starty1} x2={3*p} y2={endy1} strokeWidth='1' stroke='black'/>,
-                <line x1={2*p} y1={starty2} x2={3*p} y2={endy2} strokeWidth='1' stroke='black'/>,
+                <line x1={2*p} y1={starty1} x2={3*p} y2={endy1}/>,
+                <line x1={2*p} y1={starty2} x2={3*p} y2={endy2}/>,
 
-                <line x1={0} y1={starty1} x2={2*p} y2={starty1} strokeWidth='1' stroke='gray'/>,
-                <line x1={0} y1={starty2} x2={2*p} y2={starty2} strokeWidth='1' stroke='gray'/>,
-                <line x1={3*p} y1={endy1} x2={5*p} y2={endy1}   strokeWidth='1' stroke='gray'/>,
-                <line x1={3*p} y1={endy2} x2={5*p} y2={endy2}   strokeWidth='1' stroke='gray'/>
+                <line x1={0} y1={starty1} x2={2*p} y2={starty1} className='guideLine'/>,
+                <line x1={0} y1={starty2} x2={2*p} y2={starty2} className='guideLine'/>,
+                <line x1={3*p} y1={endy1} x2={5*p} y2={endy1}   className='guideLine'/>,
+                <line x1={3*p} y1={endy2} x2={5*p} y2={endy2}   className='guideLine'/>
             ];
         }
 
