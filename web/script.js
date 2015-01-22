@@ -197,18 +197,20 @@ var DecompileSteps = React.createClass({
             var shape = <g key={lines.length}>{linefromchange(c, this.props.steps)}</g>;
             lines.push(shape);
         }, this);
-        steps.splice(1, 0, <div key='pad1' className="step-padding"><div><svg>
+        steps.splice(1, 0, <div key={'pad'+(stepIdx)} className="step-padding"><div><svg>
             {lines1}
         </svg></div></div>);
-        steps.splice(3, 0, <div key='pad2' className="step-padding"><div><svg>
+        steps.splice(3, 0, <div key={'pad'+(stepIdx+1)} className="step-padding"><div><svg>
             {lines2}
         </svg></div></div>);
+
         // Fold up the main steps if we're not displaying them
         var mainstepsstyle = {'transition': 'height 0.5s, opacity 0.5s'};
         if (this.state.miniStepsOnly) {
             mainstepsstyle.height = '0';
             mainstepsstyle.opacity = '0';
         }
+
         // Put the selected ministep halfway along the bottom
         var halfway = -((stepIdx * miniwidth) + (miniwidth / 2));
         var ministepsstyle = {
