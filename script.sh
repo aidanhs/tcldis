@@ -6,18 +6,23 @@ chmod +x python-config
 echo "TCL_INCLUDE_SPEC='-I $TOP/emtcl/tcl/generic -I $TOP/emtcl/tcl/unix'" > $TOP/tclConfig.sh
 
 git clone --recursive https://github.com/aidanhs/empython.git empython-build
-cd empython-build
-    cd python && make -f ../Makefile prep em && cd ..
-    cd ..
+cd empython-build/python
+    make -f ../Makefile prep
+    make -f ../Makefile em
+    cd ../..
 
 git clone --recursive https://github.com/aidanhs/emtcl.git
+git clone --recursive https://github.com/aidanhs/tcldis.git
+
 cd emtcl
-    git submodule init && git submodule update
+    # make emtcl compile the optimal tcl version for tcldis
+    cd tcl
+        git checkout $(cd ../../tcldis/opt/tcl8.5 && git rev-parse HEAD)
+        cd ..
     make tclprep
     make emtcl.bc
     cd ..
 
-git clone --recursive https://github.com/aidanhs/tcldis.git # don't use the tcl from here
 cd tcldis
     sed -i 's/gcc/emcc/g' Makefile
     sed -i 's/TclDisassembleByteCodeObj/\0_/g' src/tcl_bcutil.c
@@ -31,7 +36,6 @@ cd tcldis
         cd ../..
     cd ..
 
-rm -rf empython
 git clone --recursive https://github.com/aidanhs/empython.git
 cd empython
     ln -sf python/libpython2.7.a libpython.a
