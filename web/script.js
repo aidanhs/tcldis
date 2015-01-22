@@ -136,16 +136,18 @@ var DecompileSteps = React.createClass({
                         break;
                     }
                 }
-                numlines++;
-                numlines += step[bbi][ii].split('\n').length - 1;
-                if (bbi === cb && ii === c[2][1] - 1) {
+                if (bbi === cb && ii === c[2][1]) {
                     starty2 = numlines;
                     if (c[2][0] === c[2][1]) {
                         starty1 = starty2;
                     }
                     break;
                 }
-                if (ii < step[bbi].length - 1) { ii++; }
+                if (ii < step[bbi].length) {
+                    numlines++;
+                    numlines += step[bbi][ii].split('\n').length - 1;
+                    ii++;
+                }
                 else if (bbi < step.length - 1) { bbi++; ii = 0; }
                 else { throw Error(); }
             }
@@ -164,16 +166,18 @@ var DecompileSteps = React.createClass({
                         break;
                     }
                 }
-                numlines++;
-                numlines += step[bbi][ii].split('\n').length - 1;
-                if (bbi === cb && ii === c[3][1] - 1) {
+                if (bbi === cb && ii === c[3][1]) {
                     endy2 = numlines;
                     if (c[3][0] === c[3][1]) {
                         endy1 = endy2;
                     }
                     break;
                 }
-                if (ii < step[bbi].length - 1) { ii++; }
+                if (ii < step[bbi].length) {
+                    numlines++;
+                    numlines += step[bbi][ii].split('\n').length - 1;
+                    ii++;
+                }
                 else if (bbi < step.length - 1) { bbi++; ii = 0; }
                 else { throw Error(); }
             }
