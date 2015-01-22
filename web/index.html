@@ -7,6 +7,21 @@
 </head>
 <body>
 <div id="tcldis"></div>
+<pre style="display: none;" id="initial_code">set x 5
+puts 1
+if {$x &lt; 15} {
+    puts 1
+}
+puts 2
+foreach {a b} [list 1 2 3 4] {
+    puts [expr {$a + $b}]
+}
+puts 3
+catch {my_buggy_proc} {
+    puts "the proc failed"
+}
+puts 4
+</pre>
 <script type="text/jsx">
 /** @jsx React.DOM */
 
@@ -24,7 +39,9 @@ function jsonpost(url, data, cb) {
 }
 
 function getInitialCode(cb) {
-    jsonpost('/api/default_code', '', cb);
+    setTimeout(function () {
+        cb(null, document.getElementById('initial_code').textContent);
+    }, 0);
 }
 
 function getDecompileSteps(code, cb) {
