@@ -118,26 +118,27 @@ var DecompileSteps = React.createClass({
         function linefromchange(change, steps) {
             var numlines, bbi, ii, step,
                 c = change,
-                ss = steps,
-                si = c[0];
+                cs = c[0],
+                cb = c[1],
+                ss = steps;
 
             numlines = 0;
             bbi = 0;
             ii = 0;
-            step = ss[si];
+            step = ss[cs];
             var starty1, starty2;
             while (true) {
-                if (bbi === c[1][0] && ii === c[1][1][0]) {
+                if (bbi === cb && ii === c[2][0]) {
                     starty1 = numlines;
-                    if (c[1][1][0] === c[1][1][1]) {
+                    if (c[2][0] === c[2][1]) {
                         starty2 = numlines;
                         break;
                     }
                 }
                 numlines++;
                 numlines += step[bbi][ii].split('\n').length - 1;
-                if (bbi === c[1][0] && ii === c[1][1][1] - 1) {
-                    if (c[1][1][0] !== c[1][1][1]) {
+                if (bbi === cb && ii === c[2][1] - 1) {
+                    if (c[2][0] !== c[2][1]) {
                         starty2 = numlines;
                     } else {
                         starty1 = starty2 = numlines;
@@ -152,20 +153,20 @@ var DecompileSteps = React.createClass({
             numlines = 0;
             bbi = 0;
             ii = 0;
-            step = ss[si+1];
+            step = ss[cs+1];
             var endy1, endy2;
             while (true) {
-                if (bbi === c[2][0] && ii === c[2][1][0]) {
+                if (bbi === cb && ii === c[3][0]) {
                     endy1 = numlines;
-                    if (c[2][1][0] === c[2][1][1]) {
+                    if (c[3][0] === c[3][1]) {
                         endy2 = numlines;
                         break;
                     }
                 }
                 numlines++;
                 numlines += step[bbi][ii].split('\n').length - 1;
-                if (bbi === c[2][0] && ii === c[2][1][1] - 1) {
-                    if (c[2][1][0] !== c[2][1][1]) {
+                if (bbi === cb && ii === c[3][1] - 1) {
+                    if (c[3][0] !== c[3][1]) {
                         endy2 = numlines;
                     } else {
                         endy1 = endy2 = numlines;

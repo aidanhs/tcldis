@@ -989,6 +989,6 @@ def decompile_steps(bc):
                 if type(lto) is int:
                     lto = (lto, lto + 1)
                 assert type(lfrom) is type(lto) is tuple
-                changes.append((i-1, (j, lfrom), (j, lto)))
+                changes.append((i-1, j, lfrom, lto))
         steps.append(step)
     return steps, changes
