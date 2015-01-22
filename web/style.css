@@ -78,6 +78,7 @@ pre { margin: 0; }
     width: 500%;
     height: 100%;
     left: -200%;
+    pointer-events: none;
 }
 line {
     stroke-width: 1;
