@@ -16,9 +16,9 @@ ROOT = os.path.dirname(__file__)
 def index():
     return static_file('index.html', root=ROOT)
 
-@route('/static/<path:path>.js')
+@route('/static/<path:path>')
 def static_srv(path):
-    return static_file(path + '.js', root=ROOT)
+    return static_file(path, root=ROOT)
 
 @route('/api/default_code', method='POST')
 def default_code():

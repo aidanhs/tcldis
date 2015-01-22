@@ -1,0 +1,113 @@
+* {
+    box-sizing: border-box;
+    font-size: 12px;
+    /* make sure this makes exact numbers when multiplied by the font-sizes
+     * in this app */
+    line-height: 1.25;
+}
+html { height: 100%; }
+body { height: 100%; width: 100%; margin: 0; padding: 0; }
+pre { margin: 0; }
+#codearea, #stepsarea {
+    box-shadow: 0 0 0 2px grey inset; padding: 4px;
+}
+#codearea {
+    position: fixed;
+    height: 100%;
+    top: 0; bottom: 0;
+    width: 20%;
+    display: table;
+}
+#codearea > div {
+    display: table-row;
+    position: relative;
+}
+#codearea > div+div { height: 100%; }
+#codearea > div > textarea {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+#stepsarea {
+    position: fixed;
+    height: 100%;
+    top: 0; bottom: 0;
+    width: 80%;
+    right: 0;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    padding: 0;
+}
+#stepsarea > #mainsteps {
+    display: table;
+    height: 90%;
+    margin: 0 auto 0 auto;
+    border-spacing: 0 5px;
+}
+#stepsarea > #mainsteps > div {
+    display: table-cell;
+    position: relative;
+    box-shadow: 0 0 0 1px grey inset;
+    padding: 4px;
+    vertical-align: top;
+    height: 100%;
+}
+#stepsarea > #mainsteps > div.step {
+    width: 250px;
+}
+#stepsarea > #mainsteps > div.step > pre {
+    position: absolute;
+    top: 0; bottom: 0; left: 0; right: 0;
+    margin: 4px;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+#stepsarea > #mainsteps > div.step-padding {
+    padding-left: 0;
+    padding-right: 0;
+}
+.step-padding > div {
+    position: relative;
+    width: 50px;
+    height: 100%;
+}
+.step-padding > div > svg {
+    /* Have to remove from layout flow otherwise collapsing height to 0
+     * stubbornly refuses to work. Otherwise we'd merge with the rule above. */
+    position: absolute;
+    width: 500%;
+    height: 100%;
+    left: -200%;
+}
+line {
+    stroke-width: 1;
+    stroke: black;
+}
+line.guideLine {
+    stroke-width: 0.5;
+    stroke-dasharray: 5, 5;
+}
+#stepsarea > #ministeps {
+    position: absolute;
+    display: table;
+    margin-left: 50%;
+}
+#stepsarea > #ministeps > div {
+    display: table-cell;
+}
+#stepsarea > #ministeps > div > pre {
+    box-shadow: 0 0 0 1px grey inset; padding: 2px;
+    font-size: 4px;
+    width: 80px;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+#stepsarea > #ministeps > div > pre span {
+    font-size: inherit;
+}
+/* Ideally only one rule, but can't figure out how to make ministeps
+ * table-cell div shrink in height to same size as child pre */
+#mainsteps > .selected-step, #ministeps > .selected-step > pre {
+    background-color: lightblue;
+}
+
