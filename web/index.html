@@ -24,6 +24,7 @@ puts 4
 </pre>
 <script type="text/jsx">
 /** @jsx React.DOM */
+'use strict';
 
 function jsonpost(url, data, cb) {
     var r = new XMLHttpRequest();
@@ -48,7 +49,6 @@ function getDecompileSteps(code, cb) {
     jsonpost('/api/decompile_steps', code, cb);
 }
 
-'use strict';
 React.renderComponent(
     <TclDisUI />,
     document.getElementById('tcldis')
