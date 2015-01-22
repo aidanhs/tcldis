@@ -11,8 +11,8 @@ cd empython-build/python
     make -f ../Makefile em
     cd ../..
 
+git submodule init && git submodule update # tcldis
 git clone --recursive https://github.com/aidanhs/emtcl.git
-git clone --recursive https://github.com/aidanhs/tcldis.git
 
 cd emtcl
     # make emtcl compile the optimal tcl version for tcldis
