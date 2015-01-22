@@ -1,29 +1,22 @@
 /** @jsx React.DOM */
+(function () {
 'use strict';
 var miniwidth = 80;
 var padwidth = 50;
 var linemult = 1.25;
 var fontsize = 12 * linemult;
 
-function jsonpost(url, data, cb) {
-    var r = new XMLHttpRequest();
-    r.open('POST', url, true);
-    r.setRequestHeader('Content-type', 'application/json');
-    r.onreadystatechange = (function () {
-        if (r.readyState != 4) return;
-        var err = r.status !== 200; // we don't have 304's in this app
-        var data = err ? null : JSON.parse(r.responseText);
-        cb(err, data);
-    });
-    r.send(JSON.stringify(data));
-}
+// These must be user-supplied
+window.getInitialCode = window.getDecompileSteps = function () {
+    alert('Must define getInitialCode and getDecompileSteps globally');
+};
 
 var CodeArea = React.createClass({
     getInitialState: function () {
-        jsonpost('/api/default_code', '', (function (err, data) {
+        window.getInitialCode(function (err, data) {
             this.setState({'code': data});
             setTimeout(this.onDecompileClick, 0);
-        }).bind(this));
+        }.bind(this));
         return {'code': ''};
     },
     handleChange: function (e) {
@@ -237,14 +230,14 @@ var DecompileSteps = React.createClass({
     }
 });
 
-var TclDisUI = React.createClass({
+window.TclDisUI = React.createClass({
     getInitialState: function () {
         return {'steps': [], 'changes': []};
     },
     getDecompileSteps: function (code) {
-        jsonpost('/api/decompile_steps', code, (function (err, data) {
+        window.getDecompileSteps(code, function (err, data) {
             this.setState(data);
-        }).bind(this));
+        }.bind(this));
     },
     render: function () {
         return (
@@ -255,4 +248,4 @@ var TclDisUI = React.createClass({
         );
     }
 });
-
+})();

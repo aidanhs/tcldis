@@ -9,6 +9,28 @@
 <div id="tcldis"></div>
 <script type="text/jsx">
 /** @jsx React.DOM */
+
+function jsonpost(url, data, cb) {
+    var r = new XMLHttpRequest();
+    r.open('POST', url, true);
+    r.setRequestHeader('Content-type', 'application/json');
+    r.onreadystatechange = (function () {
+        if (r.readyState != 4) return;
+        var err = r.status !== 200; // we don't have 304's in this app
+        var data = err ? null : JSON.parse(r.responseText);
+        cb(err, data);
+    });
+    r.send(JSON.stringify(data));
+}
+
+function getInitialCode(cb) {
+    jsonpost('/api/default_code', '', cb);
+}
+
+function getDecompileSteps(code, cb) {
+    jsonpost('/api/decompile_steps', code, cb);
+}
+
 'use strict';
 React.renderComponent(
     <TclDisUI />,
