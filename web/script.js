@@ -5,9 +5,6 @@ var padwidth = 50;
 var linemult = 1.25;
 var fontsize = 12 * linemult;
 
-function copy(obj) {
-    return JSON.parse(JSON.stringify(obj));
-}
 function jsonpost(url, data, cb) {
     var r = new XMLHttpRequest();
     r.open('POST', url, true);
