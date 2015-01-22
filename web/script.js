@@ -118,15 +118,16 @@ var DecompileSteps = React.createClass({
         function linefromchange(change, steps) {
             var numlines, bbi, ii, step,
                 c = change,
-                cs = c[0],
-                cb = c[1],
+                cs = c[0], // What step is this change transforming?
+                cb = c[1], // What block is this change transforming?
                 ss = steps;
 
             numlines = 0;
-            bbi = 0;
-            ii = 0;
+            bbi = 0; // Which bblock are we looking at right now
+            ii = 0; // Which 'line' in the bblock are we looking at right now
             step = ss[cs];
             var starty1, starty2;
+            // Find the offset of source lines
             while (true) {
                 if (bbi === cb && ii === c[2][0]) {
                     starty1 = numlines;
@@ -138,10 +139,9 @@ var DecompileSteps = React.createClass({
                 numlines++;
                 numlines += step[bbi][ii].split('\n').length - 1;
                 if (bbi === cb && ii === c[2][1] - 1) {
-                    if (c[2][0] !== c[2][1]) {
-                        starty2 = numlines;
-                    } else {
-                        starty1 = starty2 = numlines;
+                    starty2 = numlines;
+                    if (c[2][0] === c[2][1]) {
+                        starty1 = starty2;
                     }
                     break;
                 }
@@ -155,6 +155,7 @@ var DecompileSteps = React.createClass({
             ii = 0;
             step = ss[cs+1];
             var endy1, endy2;
+            // Find the offset of the target lines
             while (true) {
                 if (bbi === cb && ii === c[3][0]) {
                     endy1 = numlines;
@@ -166,10 +167,9 @@ var DecompileSteps = React.createClass({
                 numlines++;
                 numlines += step[bbi][ii].split('\n').length - 1;
                 if (bbi === cb && ii === c[3][1] - 1) {
-                    if (c[3][0] !== c[3][1]) {
-                        endy2 = numlines;
-                    } else {
-                        endy1 = endy2 = numlines;
+                    endy2 = numlines;
+                    if (c[3][0] === c[3][1]) {
+                        endy1 = endy2;
                     }
                     break;
                 }

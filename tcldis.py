@@ -974,14 +974,37 @@ def decompile(bc):
     return _bblocks_fmt(bblocks)
 
 def decompile_steps(bc):
+    """
+    Given some bytecode, returns a tuple of `(steps, changes)` for decompilation.
+
+    `steps` is a list of 'snapshot's of each stage of the decompilation.
+    Each 'snapshot' is a list of 'basic block's in the program in that snapshot.
+    Each 'basic block' is a list of 'line's in that bblock.
+    Each 'line' is a string. The definition of a line is flexible - it might be
+    a call to `foreach` (with all nested instructions), it might be a single
+    bytecode instruction.
+    In summary, `steps` is a list of lists of lists of strings.
+
+    `changes` is a list of 'change descriptor's.
+    Each change descriptor looks like (si, bbi, (lfrom1, lfrom2), (lto1, lto2))
+     - si is the index of the step this change applies to
+     - bbi is the index of the bblock this change applies to
+     - lfrom1 is the slice index of the start of the source changed lines
+     - lfrom2 is the slice index of the end of the source changed lines
+     - lto1 is the slice index of the start of the target changed lines
+     - lto2 is the slice index of the end of the target change lines
+    Note that these are *slice* indexes, i.e. like python. So if lto1 and lto2
+    are the same, it means the source lines have been reduced to a line of
+    width 0 (i.e. have been removed entirely).
+    """
     steps = []
     changes = []
-    for i, (bblocks, bbschanges) in enumerate(_decompile(bc)):
+    for si, (bblocks, bbschanges) in enumerate(_decompile(bc)):
         step = []
         if bbschanges == []:
             bbschanges = [[]] * len(bblocks)
         assert len(bblocks) == len(bbschanges)
-        for j, (bblock, bbchanges) in enumerate(zip(bblocks, bbschanges)):
+        for bbi, (bblock, bbchanges) in enumerate(zip(bblocks, bbschanges)):
             step.append(bblock.fmt_insts())
             for lfrom, lto in bbchanges:
                 if type(lfrom) is int:
@@ -989,6 +1012,6 @@ def decompile_steps(bc):
                 if type(lto) is int:
                     lto = (lto, lto + 1)
                 assert type(lfrom) is type(lto) is tuple
-                changes.append((i-1, j, lfrom, lto))
+                changes.append((si-1, bbi, lfrom, lto))
         steps.append(step)
     return steps, changes
