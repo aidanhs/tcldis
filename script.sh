@@ -51,3 +51,5 @@ cd empython
     ln -s ../../../tcldis/tcldis.py python/Lib
     sed -i 's|libz\.a$|\0 ../tcldis/opt/libtclpy/libtclpy.a ../tcldis/lib_tcldis.a ../emtcl/emtcl.bc|' Makefile
     make
+    cp lp.js ../tcldis.js
+    cd ..
