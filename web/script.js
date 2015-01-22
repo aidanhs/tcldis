@@ -11,7 +11,7 @@ window.getInitialCode = window.getDecompileSteps = function () {
     alert('Must define getInitialCode and getDecompileSteps globally');
 };
 
-var CodeArea = React.createClass({
+var ActionArea = React.createClass({
     getInitialState: function () {
         window.getInitialCode(function (err, data) {
             this.setState({'code': data});
@@ -27,9 +27,14 @@ var CodeArea = React.createClass({
     },
     render: function () {
         return (
-            <div id='codearea'>
-                <div><button onClick={this.onDecompileClick}>decompile</button></div>
-                <div><textarea onChange={this.handleChange} value={this.state.code} /></div>
+            <div id='actionarea'>
+                <div><div id='actionbuttons'>
+                    <div><button onClick={this.onDecompileClick}>Decompile!</button></div>
+                    <div><button onClick={this.helpMe}>Help!</button></div>
+                </div></div>
+                <div>
+                    <textarea onChange={this.handleChange} value={this.state.code} />
+                </div>
             </div>
         );
     }
@@ -242,7 +247,7 @@ window.TclDisUI = React.createClass({
     render: function () {
         return (
             <div>
-                <CodeArea decompileCB={this.getDecompileSteps} />
+                <ActionArea decompileCB={this.getDecompileSteps} />
                 <DecompileSteps steps={this.state.steps} changes={this.state.changes} />
             </div>
         );

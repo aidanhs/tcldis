@@ -8,22 +8,35 @@
 html { height: 100%; }
 body { height: 100%; width: 100%; margin: 0; padding: 0; }
 pre { margin: 0; }
-#codearea, #stepsarea {
+#actionarea, #stepsarea {
     box-shadow: 0 0 0 2px grey inset; padding: 4px;
 }
-#codearea {
+#actionarea {
     position: fixed;
     height: 100%;
     top: 0; bottom: 0;
     width: 20%;
     display: table;
 }
-#codearea > div {
+#actionarea > div {
     display: table-row;
     position: relative;
 }
-#codearea > div+div { height: 100%; }
-#codearea > div > textarea {
+#actionbuttons {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+}
+#actionbuttons > div {
+    display: table-cell;
+    height: 50px;
+}
+#actionbuttons > div > button {
+    width: 100%;
+    height: 100%;
+}
+#actionarea > div+div { height: 100%; }
+#actionarea > div > textarea {
     position: relative;
     height: 100%;
     width: 100%;
