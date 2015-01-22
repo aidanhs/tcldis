@@ -75,13 +75,21 @@ var DecompileSteps = React.createClass({
             return this.handleKeyDown(e);
         }).bind(this));
     },
+    handleScroll: function (e) {
+        var steps = this.getDOMNode().querySelectorAll('#mainsteps > .step > pre');
+        var offsets = [].map.call(steps, function (e) { return e.scrollTop; });
+        var ss = this.state.stepScroll;
+        if (offsets.some(function(v, i) { return v !== ss[i]; })) {
+            this.setState({'stepScroll': offsets});
+        }
+    },
     componentWillReceiveProps: function (nextProps) {
         var stepIdx = nextProps.steps.length - 2;
         if (stepIdx < 0) { stepIdx = 0; }
         this.setState({'stepIdx': stepIdx});
     },
     getInitialState: function () {
-        return {'stepIdx': 0, 'miniStepsOnly': false};
+        return {'stepIdx': 0, 'stepScroll': [0, 0, 0], 'miniStepsOnly': false};
     },
     render: function () {
         var stepIdx = this.state.stepIdx;
@@ -115,7 +123,7 @@ var DecompileSteps = React.createClass({
             }
         }
 
-        function linefromchange(change, steps) {
+        function linefromchange(change, steps, offsets) {
             var numlines, bbi, ii, step,
                 c = change,
                 cs = c[0], // What step is this change transforming?
@@ -166,10 +174,10 @@ var DecompileSteps = React.createClass({
                 else { throw Error(); }
             }
 
-            starty1 *= fontsize;
-            starty2 *= fontsize;
-            endy1 *= fontsize;
-            endy2 *= fontsize;
+            starty1 = (starty1 * fontsize) - offsets[0];
+            starty2 = (starty2 * fontsize) - offsets[0];
+            endy1 = (endy1 * fontsize) - offsets[1];
+            endy2 = (endy2 * fontsize) - offsets[1];
             var p = padwidth;
             return [
                 <line key={1} x1={2*p} y1={starty1} x2={3*p} y2={endy1}/>,
@@ -186,15 +194,17 @@ var DecompileSteps = React.createClass({
         var lines1 = [], lines2 = [];
         var changes = this.props.changes.map(function (c) {
             var step = c[0];
-            var lines;
+            var lines, offsets;
             if (step === stepIdx - 1) {
                 lines = lines1;
+                offsets = this.state.stepScroll.slice(0, 2);
             } else if (step === stepIdx) {
                 lines = lines2;
+                offsets = this.state.stepScroll.slice(1, 3);
             } else {
                 return;
             }
-            var shape = <g key={lines.length}>{linefromchange(c, this.props.steps)}</g>;
+            var shape = <g key={lines.length}>{linefromchange(c, this.props.steps, offsets)}</g>;
             lines.push(shape);
         }, this);
         steps.splice(1, 0, <div key={'pad'+(stepIdx)} className="step-padding"><div><svg>
@@ -219,7 +229,7 @@ var DecompileSteps = React.createClass({
         };
         return (
             <div id='stepsarea'>
-                <div id='mainsteps' style={mainstepsstyle}>{steps}</div>
+                <div id='mainsteps' style={mainstepsstyle} onScroll={this.handleScroll}>{steps}</div>
                 <div id='ministeps' style={ministepsstyle}>{ministeps}</div>
             </div>
         );
