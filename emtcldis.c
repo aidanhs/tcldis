@@ -17,8 +17,7 @@ static PyObject *pystr_decompile_steps;
 static PyObject *pystr_dumps;
 
 // Global variables
-static char *error = "ERROR";
-static PyObject *json = NULL;
+static PyObject *outjson = NULL;
 
 int emtcldis_init() {
     pyjson = PyImport_ImportModule("json");
@@ -44,26 +43,26 @@ int emtcldis_init() {
 }
 
 char *emtcldis_decompile(const char *code) {
-    PyObject *pycode, *nil, *bc, *res, *json;
+    PyObject *pycode, *nil, *bc, *res;
 
     pycode = PyString_FromString(code);
-    if (pycode == NULL) return "E0";
+    if (pycode == NULL) return "\"ERROR #0\"";
 
     nil = PyObject_CallMethodObjArgs(pytclpy, pystr_eval, pycode, NULL);
-    if (nil == NULL) return "E1";
+    if (nil == NULL) return "\"ERROR #1\"";
     Py_DECREF(nil);
 
     bc = PyObject_Call(pyfn_getbc, pytuple_empty, pydict_prockw);
-    if (bc == NULL) return "E2";
+    if (bc == NULL) return "\"ERROR #2\"";
 
     res = PyObject_CallMethodObjArgs(pytcldis, pystr_decompile_steps, bc, NULL);
     Py_DECREF(bc);
-    if (res == NULL) return "E3";
+    if (res == NULL) return "\"ERROR #3\"";
 
-    Py_CLEAR(json); // Free before use to avoid mem leak
-    json = PyObject_CallMethodObjArgs(pyjson, pystr_dumps, res, NULL);
+    Py_CLEAR(outjson); // Free before use to avoid mem leak
+    outjson = PyObject_CallMethodObjArgs(pyjson, pystr_dumps, res, NULL);
     Py_DECREF(res);
-    if (json == NULL) return "E4";
+    if (outjson == NULL) return "\"ERROR #4\"";
 
-    return PyString_AS_STRING(json);
+    return PyString_AS_STRING(outjson);
 }

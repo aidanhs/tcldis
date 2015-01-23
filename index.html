@@ -2,8 +2,8 @@
 <head>
     <script src="tcldis/web/react-0.11.2.min.js"></script>
     <script src="tcldis/web/JSXTransformer-0.11.2.js"></script>
-    <script src="tcldis/web/script.js" type="text/jsx"></script>
     <link  href="tcldis/web/style.css" rel="stylesheet" type="text/css">
+    <script src="tcldis/web/script.js" type="text/jsx"></script>
     <script src="tcldis.js"></script>
 </head>
 <body>
@@ -23,13 +23,17 @@ catch {my_buggy_proc} {
 }
 puts 4
 </pre>
-<script type="text/jsx">
-/** @jsx React.DOM */
+<script>
 'use strict';
 
-empython.Initialize();
-empython.Module.ccall('emtcldis_init', 'number', [], []);
-var decompile = empython.Module.cwrap('emtcldis_decompile', 'string', ['string']);
+var decompile;
+setTimeout(function () {
+    empython.Initialize();
+    decompile = empython.Module.cwrap('emtcldis_decompile', 'string', ['string']);
+}, 0);
+setTimeout(function () {
+    empython.Module.ccall('emtcldis_init', 'number', [], []);
+}, 0);
 
 function getInitialCode(cb) {
     setTimeout(function () {
@@ -38,14 +42,22 @@ function getInitialCode(cb) {
 }
 
 function getDecompileSteps(code, cb) {
-    var decompiled = JSON.parse(decompile(code));
-    cb(null, {'steps': decompiled[0], 'changes': decompiled[1]});
+    // This setTimeout serves a dual purpose. It
+    // 1. makes sure that the call to getDecompileSteps is async
+    // 2. ensures that empython initialize and emtcldis_init above have run
+    setTimeout(function () {
+        var decompiled = JSON.parse(decompile('proc p {} {\n' + code + '\n}'));
+        cb(null, {'steps': decompiled[0], 'changes': decompiled[1]});
+    }, 0);
 }
 
-React.renderComponent(
-    <TclDisUI />,
-    document.getElementById('tcldis')
-);
+// Let the jsx transformer run first
+setTimeout(function () {
+    React.renderComponent(
+        React.createElement(TclDisUI, null),
+        document.getElementById('tcldis')
+    );
+});
 </script>
 </body>
 </html>
