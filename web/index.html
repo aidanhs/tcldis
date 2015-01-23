@@ -1,7 +1,7 @@
 <html>
 <head>
-    <script src="/static/react-0.11.2.min.js"></script>
-    <script src="/static/JSXTransformer-0.11.2.js"></script>
+    <script src="/static/react-0.12.2.min.js"></script>
+    <script src="/static/JSXTransformer-0.12.2.js"></script>
     <script src="/static/script.js" type="text/jsx"></script>
     <link href="/static/style.css" rel="stylesheet" type="text/css">
 </head>
@@ -22,8 +22,8 @@ catch {my_buggy_proc} {
 }
 puts 4
 </pre>
+<!-- JSX script so it'll run after script.js has been loaded and transformed -->
 <script type="text/jsx">
-/** @jsx React.DOM */
 'use strict';
 
 function jsonpost(url, data, cb) {
@@ -49,7 +49,7 @@ function getDecompileSteps(code, cb) {
     jsonpost('/api/decompile_steps', code, cb);
 }
 
-React.renderComponent(
+React.render(
     <TclDisUI />,
     document.getElementById('tcldis')
 );
