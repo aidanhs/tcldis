@@ -7,9 +7,11 @@ var linemult = 1.25;
 var fontsize = 12 * linemult;
 
 // These must be user-supplied
-window.getInitialCode = window.getDecompileSteps = function () {
+var fillinFn = function () {
     alert('Must define getInitialCode and getDecompileSteps globally');
 };
+window.getInitialCode = window.getInitialCode || fillinFn;
+window.getDecompileSteps = window.getDecompileSteps || fillinFn;
 
 var ActionArea = React.createClass({
     getInitialState: function () {
