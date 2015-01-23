@@ -44,6 +44,8 @@ cd empython
         make -f ../Makefile em
         echo 'tclpy -L../../tcldis/opt/libtclpy -ltclpy' >> Modules/Setup
         echo '_tcldis -L../../tcldis -l_tcldis' >> Modules/Setup
+        # import site is really slow (doubles initialisation time) and we don't need it
+        sed -i 's/^int Py_NoSiteFlag;/int Py_NoSiteFlag = 1;/' Python/pythonrun.c
         emmake make || true
         cp ../python.native python && chmod +x python
         emmake make
