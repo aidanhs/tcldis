@@ -28,8 +28,8 @@ puts 4
 'use strict';
 
 empython.Initialize();
-empython.Run('import tclpy; import tcldis; import base64; import json');
-empython.Module.print = function (val) { window.decompiled = val; }
+empython.Module.ccall('emtcldis_init', 'number', [], []);
+var decompile = empython.Module.cwrap('emtcldis_decompile', 'string', ['string']);
 
 function getInitialCode(cb) {
     setTimeout(function () {
@@ -38,11 +38,8 @@ function getInitialCode(cb) {
 }
 
 function getDecompileSteps(code, cb) {
-    var proctcl = 'proc p {} {\n' + code + '\n}';
-    empython.Run('tclpy.eval(base64.b64decode("' + btoa(proctcl) + '"))');
-    empython.Run('steps, changes = tcldis.decompile_steps(tcldis.getbc(proc_name="p"));');
-    empython.Run('print json.dumps({"steps": steps, "changes": changes}),');
-    cb(null, JSON.parse(window.decompiled));
+    var decompiled = JSON.parse(decompile(code));
+    cb(null, {'steps': decompiled[0], 'changes': decompiled[1]});
 }
 
 React.renderComponent(

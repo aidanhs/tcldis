@@ -46,12 +46,14 @@ cd empython
         echo '_tcldis -L../../tcldis -l_tcldis' >> Modules/Setup
         # import site is really slow (doubles initialisation time) and we don't need it
         sed -i 's/^int Py_NoSiteFlag;/int Py_NoSiteFlag = 1;/' Python/pythonrun.c
+        cat ../../emtcldis.c >> Python/pythonrun.c
         emmake make || true
         cp ../python.native python && chmod +x python
         emmake make
     cd ..
     ln -s ../../../tcldis/tcldis.py python/Lib
     sed -i 's|libz\.a$|\0 ../tcldis/opt/libtclpy/libtclpy.a ../tcldis/lib_tcldis.a ../emtcl/emtcl.bc|' Makefile
+    sed -i 's/EXPORTED_FUNCTIONS=[^]]*/\0, '"'"'_emtcldis_init'"'"', '"'"'_emtcldis_decompile'"'"'/' Makefile
     make
     cp lp.js ../tcldis.js
     cd ..
