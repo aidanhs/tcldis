@@ -1,7 +1,7 @@
 <html>
 <head>
-    <script src="tcldis/web/react-0.11.2.min.js"></script>
-    <script src="tcldis/web/JSXTransformer-0.11.2.js"></script>
+    <script src="tcldis/web/react-0.12.2.min.js"></script>
+    <script src="tcldis/web/JSXTransformer-0.12.2.js"></script>
     <link  href="tcldis/web/style.css" rel="stylesheet" type="text/css">
     <script src="tcldis/web/script.js" type="text/jsx"></script>
     <script src="tcldis.js"></script>
@@ -23,7 +23,8 @@ catch {my_buggy_proc} {
 }
 puts 4
 </pre>
-<script>
+<!-- JSX script so it'll run after script.js has been loaded and transformed -->
+<script type="text/jsx">
 'use strict';
 
 var decompile;
@@ -51,13 +52,10 @@ function getDecompileSteps(code, cb) {
     }, 0);
 }
 
-// Let the jsx transformer run first
-setTimeout(function () {
-    React.renderComponent(
-        React.createElement(TclDisUI, null),
-        document.getElementById('tcldis')
-    );
-});
+React.render(
+    <TclDisUI />,
+    document.getElementById('tcldis')
+);
 </script>
 </body>
 </html>
