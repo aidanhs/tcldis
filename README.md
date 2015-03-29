@@ -69,6 +69,14 @@ Now try it out:
 	    (2) push1 1         # "1"
 	    (4) storeStk 
 	    (5) done 
+	>>> bc = tcldis.getbc('set x 1')
+	>>> bc
+	BC(bytearray(b'\x01\x00\x01\x01\x17\x00'),['x', '1'],[],[],0)
+	>>> print bc
+	Bytecode with 6 bytes of instructions, 2 literals, 0 locals, 0 auxs and pc 0
+	>>> bc._literals
+	['x', '1']
+
 
 TESTS AND ACTUAL DECOMPILATION
 ------------------------------
@@ -100,7 +108,7 @@ Now you can actually play with decompiling:
     >>> tclpy.eval('proc p {x} {if {$x > 5} {return 15}}')
     ''
     >>> bc = tcldis.getbc(proc_name='p')
-    >>> print str(bc)[:40]+'...' # internal representation
+    >>> print repr(bc)[:40]+'...' # internal representation
     BC(bytearray(b'\n\x00\x01\x000&\x10i\x00...
     >>> print tcldis.decompile(bc)
     if {$x > 5} {

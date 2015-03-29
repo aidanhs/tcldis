@@ -56,8 +56,20 @@ class BC(object):
             self._literals,
             self._locals,
             self._auxs,
-            self._pc
+            self._pc,
         ]])
+    def __str__(self):
+        fmtstr = (
+            'Bytecode with %s bytes of instructions, %s literals, %s locals, ' +
+            '%s auxs and pc %s'
+        )
+        return fmtstr % (
+            len(self._bytecode),
+            len(self._literals),
+            len(self._locals),
+            len(self._auxs),
+            self._pc,
+        )
     def __len__(self):
         return len(self._bytecode) - self._pc
     def literal(self, n):
