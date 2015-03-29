@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import struct
-import copy
 import itertools
 from collections import namedtuple, OrderedDict
 
@@ -677,7 +676,7 @@ def _inst_reductions():
         # Misc
         'concat1': [[firstop], BCConcat],
         'pop': [[N(1), lambda arg: isinstance(arg, BCProcCall)], lambda i, v: v[0].destack()],
-        'dup': [[N(1), is_simple], lambda i, v: [v[0], copy.copy(v[0])]],
+        'dup': [[N(1), is_simple], lambda i, v: [v[0], v[0]]],
         'done': [[N(1)], BCDone],
         'returnImm': [[N(2)], BCReturn],
         # Useless
@@ -835,9 +834,6 @@ def _bblock_flow(bblocks):
         assert not (_is_catch_end(middle) or _is_catch_begin(middle))
         if any([isinstance(inst, Inst) for inst in begin.insts[1:]]):
             continue
-        # Do some trickery here because we need to consume the begin bblock
-        # but retain the original object as a reference for jump targets.
-        begin = copy.copy(begin)
         endcatchinst = end.insts[0]
         end = end.replaceinst(0, [])
         endcatch = BBlock([endcatchinst], endcatchinst.loc)
@@ -886,8 +882,6 @@ def _bblock_flow(bblocks):
         if targets.count(bblocks[i+1].loc) > 1: continue
         if targets.count(bblocks[i+2].loc) > 0: continue
         if targets.count(bblocks[i+3].loc) > 1: continue
-        # Do some trickery here because we need to consume the begin bblock
-        # but retain the original object as a reference for jump targets.
         foreach_start = bblocks[i].insts[-1]
         bblocks[i] = bblocks[i].popinst()
         numvarlists = len(foreach_start.ops[0][1])
