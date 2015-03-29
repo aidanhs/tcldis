@@ -239,7 +239,7 @@ class BCProcCall(BCValue):
     def __repr__(self):
         return 'BCProcCall(%s)' % (self.value,)
     def fmt(self):
-        args = self.value[:]
+        args = list(self.value)
         if args[0].fmt() == '::tcl::array::set':
             args[0:1] = [BCLiteral(None, 'array'), BCLiteral(None, 'set')]
         cmd = ' '.join([arg.fmt() for arg in args])
