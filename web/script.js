@@ -41,6 +41,102 @@ var ActionArea = React.createClass({
     }
 });
 
+var StepPadding = React.createClass({
+    shouldComponentUpdate: function (nextProps, nextState) {
+        return (
+            this.props.stepIdx !== nextProps.stepIdx ||
+            this.props.steps !== nextProps.steps ||
+            this.props.changes !== nextProps.changes ||
+            this.props.offsets[0] !== nextProps.offsets[0] ||
+            this.props.offsets[1] !== nextProps.offsets[1]
+        );
+    },
+    render: function () {
+        function linefromchange(change, steps, offsets) {
+            var numlines, bbi, ii, step,
+                c = change,
+                cs = c[0], // What step is this change transforming?
+                cb = c[1], // What block is this change transforming?
+                ss = steps;
+
+            numlines = 0;
+            bbi = 0; // Which bblock are we looking at right now
+            ii = 0; // Which 'line' in the bblock are we looking at right now
+            step = ss[cs];
+            var starty1, starty2;
+            // Find the offset of source lines
+            while (true) {
+                if (bbi === cb && ii === c[2][0]) {
+                    starty1 = numlines;
+                }
+                if (bbi === cb && ii === c[2][1]) {
+                    starty2 = numlines;
+                    break;
+                }
+                if (ii < step[bbi].length) {
+                    numlines += step[bbi][ii].split('\n').length;
+                    ii++;
+                }
+                else if (bbi < step.length - 1) { bbi++; ii = 0; }
+                else { throw Error(); }
+            }
+
+            numlines = 0;
+            bbi = 0;
+            ii = 0;
+            step = ss[cs+1];
+            var endy1, endy2;
+            // Find the offset of the target lines
+            while (true) {
+                if (bbi === cb && ii === c[3][0]) {
+                    endy1 = numlines;
+                }
+                if (bbi === cb && ii === c[3][1]) {
+                    endy2 = numlines;
+                    break;
+                }
+                if (ii < step[bbi].length) {
+                    numlines += step[bbi][ii].split('\n').length;
+                    ii++;
+                }
+                else if (bbi < step.length - 1) { bbi++; ii = 0; }
+                else { throw Error(); }
+            }
+
+            starty1 = (starty1 * fontsize) - offsets[0];
+            starty2 = (starty2 * fontsize) - offsets[0];
+            endy1 = (endy1 * fontsize) - offsets[1];
+            endy2 = (endy2 * fontsize) - offsets[1];
+            var p = padwidth;
+            return [
+                <line key={1} x1={2*p} y1={starty1} x2={3*p} y2={endy1}/>,
+                <line key={2} x1={2*p} y1={starty2} x2={3*p} y2={endy2}/>,
+
+                <line key={3} x1={0} y1={starty1} x2={2*p} y2={starty1} className='guideLine'/>,
+                <line key={4} x1={0} y1={starty2} x2={2*p} y2={starty2} className='guideLine'/>,
+                <line key={5} x1={3*p} y1={endy1} x2={5*p} y2={endy1}   className='guideLine'/>,
+                <line key={6} x1={3*p} y1={endy2} x2={5*p} y2={endy2}   className='guideLine'/>
+            ];
+        }
+
+        var stepIdx = this.props.stepIdx;
+        var lines = [];
+        var changes = this.props.changes.map(function (c) {
+            var step = c[0];
+            if (c[0] !== stepIdx) {
+                return;
+            }
+            var shape = (
+                <g key={lines.length}>
+                    {linefromchange(c, this.props.steps, this.props.offsets)}
+                </g>
+            );
+            lines.push(shape);
+        }, this);
+        return <div className="step-padding"><div><svg>{lines}</svg></div></div>;
+    }
+});
+
 var DecompileStepCode = React.createClass({
     shouldComponentUpdate: function (nextProps, nextState) {
         return this.props.step !== nextProps.step;
@@ -136,96 +232,19 @@ var DecompileSteps = React.createClass({
             }
         }
 
-        function linefromchange(change, steps, offsets) {
-            var numlines, bbi, ii, step,
-                c = change,
-                cs = c[0], // What step is this change transforming?
-                cb = c[1], // What block is this change transforming?
-                ss = steps;
-
-            numlines = 0;
-            bbi = 0; // Which bblock are we looking at right now
-            ii = 0; // Which 'line' in the bblock are we looking at right now
-            step = ss[cs];
-            var starty1, starty2;
-            // Find the offset of source lines
-            while (true) {
-                if (bbi === cb && ii === c[2][0]) {
-                    starty1 = numlines;
-                }
-                if (bbi === cb && ii === c[2][1]) {
-                    starty2 = numlines;
-                    break;
-                }
-                if (ii < step[bbi].length) {
-                    numlines += step[bbi][ii].split('\n').length;
-                    ii++;
-                }
-                else if (bbi < step.length - 1) { bbi++; ii = 0; }
-                else { throw Error(); }
-            }
-
-            numlines = 0;
-            bbi = 0;
-            ii = 0;
-            step = ss[cs+1];
-            var endy1, endy2;
-            // Find the offset of the target lines
-            while (true) {
-                if (bbi === cb && ii === c[3][0]) {
-                    endy1 = numlines;
-                }
-                if (bbi === cb && ii === c[3][1]) {
-                    endy2 = numlines;
-                    break;
-                }
-                if (ii < step[bbi].length) {
-                    numlines += step[bbi][ii].split('\n').length;
-                    ii++;
-                }
-                else if (bbi < step.length - 1) { bbi++; ii = 0; }
-                else { throw Error(); }
-            }
-
-            starty1 = (starty1 * fontsize) - offsets[0];
-            starty2 = (starty2 * fontsize) - offsets[0];
-            endy1 = (endy1 * fontsize) - offsets[1];
-            endy2 = (endy2 * fontsize) - offsets[1];
-            var p = padwidth;
-            return [
-                <line key={1} x1={2*p} y1={starty1} x2={3*p} y2={endy1}/>,
-                <line key={2} x1={2*p} y1={starty2} x2={3*p} y2={endy2}/>,
-
-                <line key={3} x1={0} y1={starty1} x2={2*p} y2={starty1} className='guideLine'/>,
-                <line key={4} x1={0} y1={starty2} x2={2*p} y2={starty2} className='guideLine'/>,
-                <line key={5} x1={3*p} y1={endy1} x2={5*p} y2={endy1}   className='guideLine'/>,
-                <line key={6} x1={3*p} y1={endy2} x2={5*p} y2={endy2}   className='guideLine'/>
-            ];
-        }
-
         // Add the step padding
-        var lines1 = [], lines2 = [];
-        var changes = this.props.changes.map(function (c) {
-            var step = c[0];
-            var lines, offsets;
-            if (step === stepIdx - 1) {
-                lines = lines1;
-                offsets = this.state.stepScroll.slice(0, 2);
-            } else if (step === stepIdx) {
-                lines = lines2;
-                offsets = this.state.stepScroll.slice(1, 3);
-            } else {
-                return;
-            }
-            var shape = <g key={lines.length}>{linefromchange(c, this.props.steps, offsets)}</g>;
-            lines.push(shape);
-        }, this);
-        steps.splice(1, 0, <div key={'pad'+(stepIdx)} className="step-padding"><div><svg>
-            {lines1}
-        </svg></div></div>);
-        steps.splice(3, 0, <div key={'pad'+(stepIdx+1)} className="step-padding"><div><svg>
-            {lines2}
-        </svg></div></div>);
+        steps.splice(1, 0,
+            <StepPadding key={'pad'+(stepIdx)}
+            stepIdx={stepIdx - 1} steps={this.props.steps} changes={this.props.changes}
+            offsets={this.state.stepScroll.slice(0, 2)}
+            />
+        );
+        steps.splice(3, 0,
+            <StepPadding key={'pad'+(stepIdx+1)}
+            stepIdx={stepIdx} steps={this.props.steps} changes={this.props.changes}
+            offsets={this.state.stepScroll.slice(1, 3)}
+            />
+        );
 
         // Fold up the main steps if we're not displaying them
         var mainstepsstyle = {'transition': 'height 0.5s, opacity 0.5s'};
