@@ -1018,6 +1018,11 @@ def decompile_steps(bc):
                 if type(lto) is int:
                     lto = (lto, lto + 1)
                 assert type(lfrom) is type(lto) is tuple
-                changes.append((si-1, bbi, lfrom, lto))
+                changes.append({
+                    'step': si-1,
+                    'bblock': bbi,
+                    'from': lfrom,
+                    'to': lto,
+                })
         steps.append(step)
     return steps, changes
