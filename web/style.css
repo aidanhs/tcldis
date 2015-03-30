@@ -118,9 +118,6 @@ line.guideLine {
     overflow-x: hidden;
     overflow-y: hidden;
 }
-#ministeps > div > pre span {
-    font-size: inherit;
-}
 /* Ideally only one rule, but can't figure out how to make ministeps
  * table-cell div shrink in height to same size as child pre */
 #mainsteps > .selected-step, #ministeps > .selected-step > pre {
