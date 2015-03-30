@@ -41,6 +41,24 @@ var ActionArea = React.createClass({
     }
 });
 
+var DecompileStepCode = React.createClass({
+    shouldComponentUpdate: function (nextProps, nextState) {
+        return this.props.step !== nextProps.step;
+    },
+    render: function () {
+        var step = this.props.step;
+        return (
+            <pre>{step.map(function (bb, bbi) {
+                return (
+                    <span key={bbi}>{bb.map(function (inst, ii) {
+                        return <span key={ii}>{inst+'\n'}</span>;
+                    })}</span>
+                );
+            })}</pre>
+        );
+    }
+});
+
 var DecompileSteps = React.createClass({
     handleKeyDown: function (e) {
         var key = e.keyCode || e.charCode;
@@ -102,13 +120,7 @@ var DecompileSteps = React.createClass({
             if (stepIdx === si) { className += ' selected-step'; }
             var elt = (
                 <div className={className} key={si}>
-                    <pre>{step.map(function (bb, bbi) {
-                        return (
-                            <span key={bbi}>{bb.map(function (inst, ii) {
-                                return <span key={ii}>{inst+'\n'}</span>;
-                            })}</span>
-                        );
-                    })}</pre>
+                    <DecompileStepCode step={step} />
                 </div>
             );
             ministeps.push(elt);
