@@ -229,13 +229,13 @@ var DecompileSteps = React.createClass({
 
         // Add the step padding
         stepElts.splice(1, 0,
-            <StepPadding key={'pad'+(stepIdx)}
-            stepIdx={stepIdx - 1} steps={this.props.steps} changes={this.props.changes}
+            <StepPadding key={'pad'+(stepIdx-1)}
+            stepIdx={stepIdx-1} steps={this.props.steps} changes={this.props.changes}
             offsets={this.state.stepScroll.slice(0, 2)}
             />
         );
         stepElts.splice(3, 0,
-            <StepPadding key={'pad'+(stepIdx+1)}
+            <StepPadding key={'pad'+(stepIdx)}
             stepIdx={stepIdx} steps={this.props.steps} changes={this.props.changes}
             offsets={this.state.stepScroll.slice(1, 3)}
             />
