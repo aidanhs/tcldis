@@ -56,6 +56,7 @@ pre { margin: 0; }
     height: 90%;
     margin: 0 auto 0 auto;
     border-spacing: 0 5px;
+    transition: height 0.5s, opacity 0.5s;
 }
 #stepsarea > #mainsteps > div {
     display: table-cell;
@@ -106,6 +107,7 @@ line.guideLine {
     position: absolute;
     display: table;
     margin-left: 50%;
+    transition: left 0.2s;
 }
 #stepsarea > #ministeps > div {
     display: table-cell;
