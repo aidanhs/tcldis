@@ -51,14 +51,13 @@ pre { margin: 0; }
     overflow-y: hidden;
     padding: 0;
 }
-#stepsarea > #mainsteps {
+#mainsteps {
     display: table;
     height: 90%;
-    margin: 0 auto 0 auto;
-    border-spacing: 0 5px;
+    margin: 5px auto 5px auto;
     transition: height 0.5s, opacity 0.5s;
 }
-#stepsarea > #mainsteps > div {
+#mainsteps > div {
     display: table-cell;
     position: relative;
     box-shadow: 0 0 0 1px grey inset;
@@ -66,17 +65,17 @@ pre { margin: 0; }
     vertical-align: top;
     height: 100%;
 }
-#stepsarea > #mainsteps > div.step {
+#mainsteps > div.step {
     width: 250px;
 }
-#stepsarea > #mainsteps > div.step > pre {
+#mainsteps > div.step > pre {
     position: absolute;
     top: 0; bottom: 0; left: 0; right: 0;
     margin: 4px;
     overflow-x: auto;
     overflow-y: auto;
 }
-#stepsarea > #mainsteps > div.step-padding {
+#mainsteps > div.step-padding {
     padding-left: 0;
     padding-right: 0;
 }
@@ -103,23 +102,23 @@ line.guideLine {
     stroke-width: 0.5;
     stroke-dasharray: 5, 5;
 }
-#stepsarea > #ministeps {
+#ministeps {
     position: absolute;
     display: table;
     margin-left: 50%;
     transition: left 0.2s;
 }
-#stepsarea > #ministeps > div {
+#ministeps > div {
     display: table-cell;
 }
-#stepsarea > #ministeps > div > pre {
+#ministeps > div > pre {
     box-shadow: 0 0 0 1px grey inset; padding: 2px;
     font-size: 4px;
     width: 80px;
     overflow-x: hidden;
     overflow-y: hidden;
 }
-#stepsarea > #ministeps > div > pre span {
+#ministeps > div > pre span {
     font-size: inherit;
 }
 /* Ideally only one rule, but can't figure out how to make ministeps
