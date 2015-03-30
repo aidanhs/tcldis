@@ -171,6 +171,9 @@ var DecompileSteps = React.createClass({
         if (!(stepIdx < 0 || stepIdx >= this.props.steps.length)) {
             this.setState({'stepIdx': stepIdx});
         }
+        // Lazy way of updating the offsets - since react re-uses the
+        // DOM nodes, scrolled elements will be in the same place.
+        this.handleScroll();
     },
     componentDidMount: function () {
         document.addEventListener('keydown', (function (e) {
@@ -186,17 +189,15 @@ var DecompileSteps = React.createClass({
         }).bind(this));
     },
     handleScroll: function (e) {
-        var steps = this.getDOMNode().querySelectorAll('#mainsteps > .step > pre');
-        var offsets = [].map.call(steps, function (e) { return e.scrollTop; });
+        var steps = this.getDOMNode().querySelectorAll('#mainsteps > .step');
+        var offsets = [].map.call(steps, function (e) { return e.children[0].scrollTop; });
         var ss = this.state.stepScroll;
         if (offsets.some(function(v, i) { return v !== ss[i]; })) {
             this.setState({'stepScroll': offsets});
         }
     },
     componentWillReceiveProps: function (nextProps) {
-        var stepIdx = nextProps.steps.length - 2;
-        if (stepIdx < 0) { stepIdx = 0; }
-        this.setState({'stepIdx': stepIdx});
+        this.setState({'stepIdx': 0});
     },
     getInitialState: function () {
         return {'stepIdx': 0, 'stepScroll': [0, 0, 0], 'miniStepsOnly': false};
@@ -217,13 +218,46 @@ var DecompileSteps = React.createClass({
             if (si < stepIdx - 1 || si > stepIdx + 1) { return; }
             stepElts.push(elt);
         }, this);
-        // Add blank divs at beginning and end
+        // Add blank divs at beginning or end
         if (stepElts.length === 2) {
-            var pre = <pre> </pre>;
-            if (stepElts[1].key !== 'step'+(stepIdx+1)) {
-                stepElts.push(<div className='step' key={'step'+(stepIdx+1)}>{pre}</div>);
-            } else if (stepElts[0].key !== 'step'+(stepIdx-1)) {
-                stepElts.unshift(<div className='step' key={'step'+(stepIdx-1)}>{pre}</div>);
+            var span;
+            if (stepElts[0].key !== 'step'+(stepIdx-1)) {
+                span = (<span className='commentary'>
+                    On the left is the code to decompile.
+                    <p />
+                    However, first it must be compiled.
+                    Immediately on the right is the result of passing the code to the Tcl
+                    bytecode (BC) compiler as a proc body. The lines like
+                    `<span className='code'>&lt;X: text (params)&gt;</span>` are a
+                    human-readable representation of each 'instruction' produced by the
+                    BC compiler - on execution they'd be run by the Tcl BC
+                    interpreter in a <a href='http://en.wikipedia.org/wiki/Stack_machine'>stack machine</a>,
+                    somewhat like Java (and Python).
+                    <p />
+                    For example, `<span className='code'>&lt;30: push1 (2)&gt;</span>` will
+                    push the second value from the 'literals array' onto the
+                    stack. If you're interested in learning more,
+                    `<a href='https://github.com/tcltk/tcl/blob/core_8_5_16/generic/tclCompile.c#L41'><span className='code'>tclCompile.h</span></a>`
+                    has a list of BC instructions and
+                    `<a href='https://github.com/tcltk/tcl/blob/core_8_5_16/generic/tclCompile.h#L345'><span className='code'>tclCompile.c</span></a>`
+                    details what a 'bytecode' structure looks like.
+                    <p />
+                    Further to the right (accessible with the arrow keys),
+                    you can see `<span className='code'>tcldis</span>`
+                    at work turning the BC instructions back into readable Tcl code.
+                    Anything marked with `<span className='code'>{'\u00bb'}</span>` represents
+                    a value on the stack, i.e. it still needs to be 'consumed' by something.
+                    <p />
+                    This decompiler is not complete! It recognises a limited set of patterns
+                    of a limited set of instructions for a single version of Tcl.
+                </span>);
+                stepElts.unshift(<div className='step' key={'step'+(stepIdx-1)}>{span}</div>);
+            } else if (stepElts[1].key !== 'step'+(stepIdx+1)) {
+                span = (<span className='commentary'>
+                    Your decompiled (as much as possible) code is on the left.
+                    <br />
+                </span>);
+                stepElts.push(<div className='step' key={'step'+(stepIdx+1)}>{span}</div>);
             }
         }
 

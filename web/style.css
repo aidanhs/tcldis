@@ -1,12 +1,18 @@
 * {
     box-sizing: border-box;
+    font-size: inherit;
+}
+html { height: 100%; }
+body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
     font-size: 12px;
     /* make sure this makes exact numbers when multiplied by the font-sizes
      * in this app */
     line-height: 1.25;
 }
-html { height: 100%; }
-body { height: 100%; width: 100%; margin: 0; padding: 0; }
 pre { margin: 0; }
 #actionarea, #stepsarea {
     box-shadow: 0 0 0 2px grey inset; padding: 4px;
@@ -68,12 +74,20 @@ pre { margin: 0; }
 #mainsteps > div.step {
     width: 250px;
 }
-#mainsteps > div.step > pre {
+#mainsteps > div.step > * { /* Either a span or a pre */
     position: absolute;
     top: 0; bottom: 0; left: 0; right: 0;
     margin: 4px;
     overflow-x: auto;
     overflow-y: auto;
+}
+#mainsteps > div.step > .commentary {
+    font-size: 15px;
+}
+#mainsteps > div.step > .commentary span.code {
+    font-size: 12px;
+    font-family: monospace;
+    white-space: nowrap;
 }
 #mainsteps > div.step-padding {
     padding-left: 0;
