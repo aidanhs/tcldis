@@ -61,6 +61,8 @@ pre { margin: 0; }
     display: table;
     height: 90%;
     margin: 5px auto 5px auto;
+    padding-left: 20px;
+    padding-right: 20px;
     transition: height 0.5s, opacity 0.5s;
 }
 #mainsteps > div {
@@ -72,7 +74,7 @@ pre { margin: 0; }
     height: 100%;
 }
 #mainsteps > div.step {
-    width: 250px;
+    width: 300px;
 }
 #mainsteps > div.step > * { /* Either a span or a pre */
     position: absolute;
