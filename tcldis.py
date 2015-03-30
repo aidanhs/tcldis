@@ -537,10 +537,23 @@ class BBlock(object):
     def popinst(self):
         return self.replaceinst(len(self.insts)-1, [])
     def fmt_insts(self):
-        return [
-            inst.fmt() if not isinstance(inst, Inst) else str(inst)
-            for inst in self.insts
-        ]
+        fmt_list = []
+        for inst in self.insts:
+            if isinstance(inst, Inst):
+                fmt_str = str(inst)
+            elif (isinstance(inst, BCValue) and not isinstance(inst, BCDone) and
+                    inst.stackn == 1):
+                # BCDone is an odd one - it leaves something on the stack.
+                # That's ok, it's usually because we've compiled a proc body
+                # and the stack value is the return value - so we don't want to
+                # display a stack indicator, but we do want to leave stackn as 1
+                # for programmatic inspection.
+                # >> symbol
+                fmt_str = u'\u00bb ' + inst.fmt()
+            else:
+                fmt_str = inst.fmt()
+            fmt_list.append(fmt_str)
+        return fmt_list
     def fmt(self):
         return '\n'.join(self.fmt_insts())
 
