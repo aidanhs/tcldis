@@ -209,7 +209,7 @@ var DecompileSteps = React.createClass({
             var className = 'step';
             if (stepIdx === si) { className += ' selected-step'; }
             var elt = (
-                <div className={className} key={si}>
+                <div className={className} key={'step'+(si)}>
                     <DecompileStepCode step={step} />
                 </div>
             );
@@ -219,10 +219,11 @@ var DecompileSteps = React.createClass({
         }, this);
         // Add blank divs at beginning and end
         if (stepElts.length === 2) {
-            if (stepElts[1].props.key != stepIdx + 1) {
-                stepElts.push(<div className='step' key={stepIdx + 1}><pre> </pre></div>);
-            } else if (stepElts[0].props.key != stepIdx - 1) {
-                stepElts.unshift(<div className='step' key={stepIdx - 1}><pre> </pre></div>);
+            var pre = <pre> </pre>;
+            if (stepElts[1].key !== 'step'+(stepIdx+1)) {
+                stepElts.push(<div className='step' key={'step'+(stepIdx+1)}>{pre}</div>);
+            } else if (stepElts[0].key !== 'step'+(stepIdx-1)) {
+                stepElts.unshift(<div className='step' key={'step'+(stepIdx-1)}>{pre}</div>);
             }
         }
 
