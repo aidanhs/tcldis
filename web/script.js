@@ -207,10 +207,9 @@ var DecompileSteps = React.createClass({
     },
     render: function () {
         var stepIdx = this.state.stepIdx;
-        var steps = [];
-        var ministeps = [];
+        var stepElts = [];
+        var miniStepElts = [];
         this.props.steps.map(function (step, si) {
-            var stepslist = steps;
             var className = 'step';
             if (stepIdx === si) { className += ' selected-step'; }
             var elt = (
@@ -218,27 +217,27 @@ var DecompileSteps = React.createClass({
                     <DecompileStepCode step={step} />
                 </div>
             );
-            ministeps.push(elt);
+            miniStepElts.push(elt);
             if (si < stepIdx - 1 || si > stepIdx + 1) { return; }
-            steps.push(elt);
+            stepElts.push(elt);
         }, this);
         // Add blank divs at beginning and end
-        if (steps.length === 2) {
-            if (steps[1].props.key != stepIdx + 1) {
-                steps.push(<div className='step' key={stepIdx + 1}><pre> </pre></div>);
-            } else if (steps[0].props.key != stepIdx - 1) {
-                steps.unshift(<div className='step' key={stepIdx - 1}><pre> </pre></div>);
+        if (stepElts.length === 2) {
+            if (stepElts[1].props.key != stepIdx + 1) {
+                stepElts.push(<div className='step' key={stepIdx + 1}><pre> </pre></div>);
+            } else if (stepElts[0].props.key != stepIdx - 1) {
+                stepElts.unshift(<div className='step' key={stepIdx - 1}><pre> </pre></div>);
             }
         }
 
         // Add the step padding
-        steps.splice(1, 0,
+        stepElts.splice(1, 0,
             <StepPadding key={'pad'+(stepIdx)}
             stepIdx={stepIdx - 1} steps={this.props.steps} changes={this.props.changes}
             offsets={this.state.stepScroll.slice(0, 2)}
             />
         );
-        steps.splice(3, 0,
+        stepElts.splice(3, 0,
             <StepPadding key={'pad'+(stepIdx+1)}
             stepIdx={stepIdx} steps={this.props.steps} changes={this.props.changes}
             offsets={this.state.stepScroll.slice(1, 3)}
@@ -254,8 +253,8 @@ var DecompileSteps = React.createClass({
 
         return (
             <div id='stepsarea'>
-                <div id='mainsteps' style={mainstepsstyle} onScroll={this.handleScroll}>{steps}</div>
-                <div id='ministeps' style={ministepsstyle}>{ministeps}</div>
+                <div id='mainsteps' style={mainstepsstyle} onScroll={this.handleScroll}>{stepElts}</div>
+                <div id='ministeps' style={ministepsstyle}>{miniStepElts}</div>
             </div>
         );
     }
