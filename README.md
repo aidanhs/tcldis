@@ -6,7 +6,9 @@ Python 2.6 - 2.7.
 
 It is best used with reference to tclCompile.{c,h} from the Tcl source.
 
-The extension is available under the 3-clause BSD license (see "LICENSE").
+The extension is available under the 3-clause BSD license (see "LICENSE"),
+apart from `src/tcl_bcutil.c`, which contains code taken directly from Tcl
+and is available under the appropriate (BSD-style) license.
 
 USAGE
 -----
@@ -58,7 +60,7 @@ Now try it out:
 
 	$ python
 	>>> import tcldis
-	>>> tcldis.printbc("set x 1")
+	>>> tcldis.printbc("set x 1") # exactly the same as tcl::unsupported::disassemble
 	ByteCode 0x0x26a0390, refCt 1, epoch 15, interp 0x0x26708f0 (epoch 15)
 	  Source "set x 1"
 	  Cmds 1, src 7, inst 6, litObjs 2, aux 0, stkDepth 2, code/src 0.00
