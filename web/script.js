@@ -210,7 +210,7 @@ var DecompileSteps = React.createClass({
         }
     },
     componentWillReceiveProps: function (nextProps) {
-        this.setState({'stepIdx': 0});
+        this.setState(this.getInitialState());
     },
     getInitialState: function () {
         return {'stepIdx': 0, 'stepScroll': [0, 0, 0], 'miniStepsOnly': false};
