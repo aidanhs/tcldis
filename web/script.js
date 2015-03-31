@@ -254,19 +254,19 @@ var DecompileSteps = React.createClass({
                     `<a href='https://github.com/tcltk/tcl/blob/core_8_5_16/generic/tclCompile.h#L345'><span className='code'>tclCompile.c</span></a>`
                     details what a 'bytecode' structure looks like.
                     <p />
-                    Further to the right, you can see `<span className='code'>tcldis</span>`
+                    When you move across, you can see `<span className='code'>tcldis</span>`
                     at work turning the BC instructions back into readable Tcl code.
                     Anything marked with `<span className='code'>{'\u00bb'}</span>` represents
                     a value on the stack, i.e. it still needs to be 'consumed' by something.
                     <br />
-                    The ministeps view is just a zoomed out way of seeing how decompilation
-                    progresses.
+                    The ministeps view (up and down) is just a zoomed out way of seeing how
+                    decompilation progresses.
                     <p />
-                    `<span className='code'>tcldis</span>` is not complete! It recognises a
-                    limited set of patterns for a limited set of instructions
+                    Note: `<span className='code'>tcldis</span>` is not complete! It recognises
+                    a limited set of patterns for a limited set of instructions
                     and is developed against a single version of Tcl. However, it does have a
                     set of <a href='https://github.com/aidanhs/tcldis/blob/master/tests/test.py'>test cases</a> which
-                    are verified as being reversible.
+                    are verified as being decompilable.
                 </span>);
                 stepElts.unshift(<div className='step' key={'step'+(stepIdx-1)}>{span}</div>);
             } else if (stepElts[1].key !== 'step'+(stepIdx+1)) {
