@@ -1003,7 +1003,8 @@ def decompile_steps(bc):
     In summary, `steps` is a list of lists of lists of strings.
 
     `changes` is a list of 'change descriptor's.
-    Each change descriptor looks like (si, bbi, (lfrom1, lfrom2), (lto1, lto2))
+    Each change descriptor looks like
+        {'step': si, 'bblock': bbi, 'from': (lfrom1, lfrom2), 'to': (lto1, lto2)}
      - si is the index of the step this change applies to
      - bbi is the index of the bblock this change applies to
      - lfrom1 is the slice index of the start of the source changed lines

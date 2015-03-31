@@ -107,9 +107,10 @@ if {$a} {
 # ----------
 
 def checkDecompileStepStructure(self, steps, changes):
+
     self.assertIs(type(steps), list)
     self.assertGreater(len(steps), 0)
-    for snapshot, changeset in zip(steps, changes):
+    for snapshot in steps:
         self.assertIs(type(snapshot), list)
         self.assertGreater(len(snapshot), 0)
         for bblock in snapshot:
@@ -118,6 +119,26 @@ def checkDecompileStepStructure(self, steps, changes):
             for line in bblock:
                 self.assertIs(type(line), unicode)
                 self.assertGreater(len(line), 0)
+
+    self.assertIs(type(changes), list)
+    # TODO: enable this when inter-bblock changes work
+    #self.assertGreaterEqual(len(changes), len(steps)-1)
+    self.assertGreater(len(changes), 0)
+    for change in changes:
+        self.assertIs(type(change), dict)
+        self.assertItemsEqual(change.keys(), ['step', 'bblock', 'from', 'to'])
+        self.assertIs(type(change['step']), int)
+        self.assertIs(type(change['bblock']), int)
+        ifrom = change['from']
+        self.assertIs(type(ifrom), tuple)
+        self.assertEqual(len(ifrom), 2)
+        self.assertIs(type(ifrom[0]), int)
+        self.assertIs(type(ifrom[1]), int)
+        ito = change['to']
+        self.assertIs(type(ito), tuple)
+        self.assertEqual(len(ito), 2)
+        self.assertIs(type(ito[0]), int)
+        self.assertIs(type(ito[1]), int)
 
     # Check we have no 0 length bblocks in final result
     self.assertGreater(len(steps), 0)
