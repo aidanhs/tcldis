@@ -34,7 +34,7 @@ function jsonpost(url, data, cb) {
     r.onreadystatechange = (function () {
         if (r.readyState != 4) return;
         var err = r.status !== 200; // we don't have 304's in this app
-        var data = err ? null : JSON.parse(r.responseText);
+        var data = err ? r.responseText : JSON.parse(r.responseText);
         cb(err, data);
     });
     r.send(JSON.stringify(data));

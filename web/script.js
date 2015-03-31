@@ -314,6 +314,12 @@ window.TclDisUI = React.createClass({
     },
     getDecompileSteps: function (code) {
         window.getDecompileSteps(code, function (err, data) {
+            if (err) {
+                alert('Looks like that decompilation failed, see the console for details');
+                console.log(data);
+                this.setState(this.getInitialState());
+                return;
+            }
             this.setState(data);
         }.bind(this));
     },
