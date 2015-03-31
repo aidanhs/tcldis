@@ -949,8 +949,21 @@ def _bblock_join(bblocks):
 
     return False
 
-def unzip(lst):
-    return [list(v) for v in zip(*lst)]
+def _bblocks_operation(bblock_op, bc, bblocks):
+    """
+    Take a per-bblock operation and wrap it to add the correct location information
+    indicating the ith bblock. Returns a list of bblocks and a flat list of changes.
+    """
+    operbblocks = []
+    operchanges = []
+    operlist = [bblock_op(bc, bblock) for bblock in bblocks]
+    for bbi, (operbblock, bblockchanges) in enumerate(operlist):
+        operbblocks.append(operbblock)
+        operchanges.extend([
+            (((bbi, lfrom1), (bbi, lfrom2)), ((bbi, lto1), (bbi, lto2)))
+            for (lfrom1, lfrom2), (lto1, lto2) in bblockchanges
+        ])
+    return operbblocks, operchanges
 
 def _decompile(bc):
     """
@@ -959,21 +972,27 @@ def _decompile(bc):
     assert isinstance(bc, BC)
     insts = getinsts(bc)
     bblocks = _bblock_create(insts)
-    yield bblocks[:], [[]] * len(bblocks)
+    yield bblocks[:], []
+
     # Reduce bblock logic
-    hackedbblocks, changes = unzip([_bblock_hack(bc, bblock) for bblock in bblocks])
-    if any([b1 is not b2 for b1, b2 in zip(bblocks, hackedbblocks)]):
+    hackedbblocks, changes = _bblocks_operation(_bblock_hack, bc, bblocks)
+    changed = any([b1 is not b2 for b1, b2 in zip(bblocks, hackedbblocks)])
+    if changed:
         bblocks = hackedbblocks
         yield bblocks[:], changes
+
     changed = True
     while changed:
         changed = False
-        reducedblocks, changes = unzip([_bblock_reduce(bc, bblock) for bblock in bblocks])
+        reducedblocks, changes = _bblocks_operation(_bblock_reduce, bc, bblocks)
         changed = any([b1 is not b2 for b1, b2 in zip(bblocks, reducedblocks)])
         bblocks = reducedblocks
         if not changed:
-            changed = _bblock_join(bblocks) or _bblock_flow(bblocks)
-            changes = [[]] * len(bblocks)
+            changed = _bblock_join(bblocks)
+            changes = []
+        if not changed:
+            changed = _bblock_flow(bblocks)
+            changes = []
         if changed: yield bblocks[:], changes
 
 def _bblocks_fmt(bblocks):
@@ -1004,31 +1023,36 @@ def decompile_steps(bc):
 
     `changes` is a list of 'change descriptor's.
     Each change descriptor looks like
-        {'step': si, 'bblock': bbi, 'from': (lfrom1, lfrom2), 'to': (lto1, lto2)}
-     - si is the index of the step this change applies to
-     - bbi is the index of the bblock this change applies to
-     - lfrom1 is the slice index of the start of the source changed lines
-     - lfrom2 is the slice index of the end of the source changed lines
-     - lto1 is the slice index of the start of the target changed lines
-     - lto2 is the slice index of the end of the target change lines
+    {
+        'step': si,
+        'from': ((bbfrom1, lfrom1), (bbfrom2, lfrom2)),
+        'to':   ((bbto1, lto1), (bbto2, lto2)),
+    }
+     - si      is the index of the step this change applies to
+     - bbfrom1 is the index of the start block of the source changed lines
+     - lfrom1  is the slice index of the start of the source changed lines
+     - bbfrom2 is the index of the end block of the source changed lines
+     - lfrom2  is the slice index of the end of the source changed lines
+     - bbto1   is the index of the start block of the target changed lines
+     - lto1    is the slice index of the start of the target changed lines
+     - bbto2   is the index of the start block of the source changed lines
+     - lto2    is the slice index of the end of the target change lines
     Note that these are *slice* indexes, i.e. like python. So if lto1 and lto2
     are the same, it means the source lines have been reduced to a line of
     width 0 (i.e. have been removed entirely).
     """
     steps = []
     changes = []
-    for si, (bblocks, bbschanges) in enumerate(_decompile(bc)):
+    for si, (sbblocks, schanges) in enumerate(_decompile(bc)):
         step = []
-        assert len(bblocks) == len(bbschanges)
-        for bbi, (bblock, bbchanges) in enumerate(zip(bblocks, bbschanges)):
-            step.append(bblock.fmt_insts())
-            for lfrom, lto in bbchanges:
-                assert type(lfrom) is type(lto) is tuple
-                changes.append({
-                    'step': si-1,
-                    'bblock': bbi,
-                    'from': lfrom,
-                    'to': lto,
-                })
+        for sbblock in sbblocks:
+            step.append(sbblock.fmt_insts())
+        for schange in schanges:
+            lfrom, lto = schange
+            changes.append({
+                'step': si-1,
+                'from': lfrom,
+                'to': lto,
+            })
         steps.append(step)
     return steps, changes

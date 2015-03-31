@@ -76,7 +76,6 @@ var StepPadding = React.createClass({
             var numlines, bbi, ii, step,
                 c = change,
                 cs = c.step, // What step is this change transforming?
-                cb = c.bblock, // What block is this change transforming?
                 ss = steps;
 
             numlines = 0;
@@ -86,10 +85,10 @@ var StepPadding = React.createClass({
             var starty1, starty2;
             // Find the offset of source lines
             while (true) {
-                if (bbi === cb && ii === c.from[0]) {
+                if (bbi === c.from[0][0] && ii === c.from[0][1]) {
                     starty1 = numlines;
                 }
-                if (bbi === cb && ii === c.from[1]) {
+                if (bbi === c.from[1][0] && ii === c.from[1][1]) {
                     starty2 = numlines;
                     break;
                 }
@@ -108,10 +107,10 @@ var StepPadding = React.createClass({
             var endy1, endy2;
             // Find the offset of the target lines
             while (true) {
-                if (bbi === cb && ii === c.to[0]) {
+                if (bbi === c.to[0][0] && ii === c.to[0][1]) {
                     endy1 = numlines;
                 }
-                if (bbi === cb && ii === c.to[1]) {
+                if (bbi === c.to[1][0] && ii === c.to[1][1]) {
                     endy2 = numlines;
                     break;
                 }

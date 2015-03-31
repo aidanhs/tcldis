@@ -130,19 +130,19 @@ def checkDecompileStepStructure(self, steps, changes):
     self.assertGreater(len(changes), 0)
     for change in changes:
         self.assertIs(type(change), dict)
-        self.assertItemsEqual(change.keys(), ['step', 'bblock', 'from', 'to'])
+        self.assertItemsEqual(change.keys(), ['step', 'from', 'to'])
         self.assertIs(type(change['step']), int)
-        self.assertIs(type(change['bblock']), int)
         ifrom = change['from']
+        ito = change['to']
         self.assertIs(type(ifrom), tuple)
         self.assertEqual(len(ifrom), 2)
-        self.assertIs(type(ifrom[0]), int)
-        self.assertIs(type(ifrom[1]), int)
-        ito = change['to']
         self.assertIs(type(ito), tuple)
         self.assertEqual(len(ito), 2)
-        self.assertIs(type(ito[0]), int)
-        self.assertIs(type(ito[1]), int)
+        for locinfo in ifrom + ito:
+            self.assertIs(type(locinfo), tuple)
+            self.assertEqual(len(locinfo), 2)
+            self.assertIs(type(locinfo[0]), int)
+            self.assertIs(type(locinfo[1]), int)
 
     # Check we have no 0 length bblocks in final result
     self.assertGreater(len(steps), 0)
