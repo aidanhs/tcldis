@@ -822,7 +822,7 @@ def _bblock_flow(bblocks):
         bblocks[i] = bblocks[i].appendinsts([BCIf(jumps, bblocks[i+1:i+3])])
         bblocks[i+1:i+3] = []
         changeend = ((i, 0), (i, len(bblocks[i].insts)))
-        return True, (changestart, changeend)
+        return [(changestart, changeend)]
 
     # Recognise a catch
     # The overall structure consists of 3 basic blocks, arranged like so:
@@ -869,7 +869,7 @@ def _bblock_flow(bblocks):
         bblocks[i+2] = end
         bblocks[i+1:i+2] = []
         changeend = ((i, 0), (i, len(bblocks[i].insts)))
-        return True, (changestart, changeend)
+        return [(changestart, changeend)]
 
     # Recognise a foreach.
     # The overall structure consists of 4 basic blocks, arranged like so:
@@ -915,9 +915,9 @@ def _bblock_flow(bblocks):
         bblocks[i] = bblocks[i].appendinsts([foreach])
         bblocks[i+1:i+3] = []
         changeend = ((i, len(bblocks[i].insts)-1), (i, len(bblocks[i].insts)))
-        return True, (changestart, changeend)
+        return [(changestart, changeend)]
 
-    return False, None
+    return []
 
 def _bblock_join(bblocks):
 
@@ -995,14 +995,11 @@ def _decompile(bc):
             bblocks, changes = _bblocks_operation(_bblock_reduce, bc, bblocks)
             changed = bool(changes)
         if not changed:
+            changes = []
             changed = _bblock_join(bblocks)
-            changes = []
         if not changed:
-            changed, change = _bblock_flow(bblocks)
-            changes = []
-            # interim measure
-            if change is not None:
-                changes = [change]
+            changes = _bblock_flow(bblocks)
+            changed = bool(changes)
         if changed: yield bblocks[:], changes
 
 def _bblocks_fmt(bblocks):
