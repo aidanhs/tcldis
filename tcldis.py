@@ -963,8 +963,8 @@ def _decompile(bc):
     # Reduce bblock logic
     hackedbblocks, changes = unzip([_bblock_hack(bc, bblock) for bblock in bblocks])
     if any([b1 is not b2 for b1, b2 in zip(bblocks, hackedbblocks)]):
+        bblocks = hackedbblocks
         yield bblocks[:], changes
-    bblocks = hackedbblocks
     changed = True
     while changed:
         changed = False

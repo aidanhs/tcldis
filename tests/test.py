@@ -110,7 +110,11 @@ def checkDecompileStepStructure(self, steps, changes):
 
     self.assertIs(type(steps), list)
     self.assertGreater(len(steps), 0)
+    prevSnapshot = None
     for snapshot in steps:
+        if prevSnapshot is not None:
+            self.assertNotEqual(prevSnapshot, snapshot)
+        prevSnapshot = snapshot
         self.assertIs(type(snapshot), list)
         self.assertGreater(len(snapshot), 0)
         for bblock in snapshot:
