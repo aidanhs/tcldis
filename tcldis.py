@@ -873,9 +873,9 @@ def _bblock_flow(bblocks):
 
     # Recognise a foreach.
     # The overall structure consists of 4 basic blocks, arranged like so:
-    # [fe start] -> [fe step]  [fe code] -> [end (unrelated code to fe)]
-    #                  ^  |--------|-----------^   <- conditional jump to end
-    #                  |-----------|               <- unconditional jump to fe step
+    # [unrelated code+fe start] -> [fe step]  [fe code] -> [unrelated code to fe]
+    #                        ^  |--------|-----------^   <- conditional jump to end
+    #                        |-----------|               <- unconditional jump to fe step
     # We only care about the end block for checking that everything does end up
     # there. The other three blocks end up 'consumed' by a BCForEach object.
     # If possible, we try and consume the BCLiteral sitting in the first instruction of
@@ -898,6 +898,8 @@ def _bblock_flow(bblocks):
         if targets.count(bblocks[i+1].loc) > 1: continue
         if targets.count(bblocks[i+2].loc) > 0: continue
         if targets.count(bblocks[i+3].loc) > 1: continue
+        # Looks like a 'foreach', apply the bblock transformation
+        changestart = ((i, len(bblocks[i].insts)-1), (i+3, 1))
         foreach_start = bblocks[i].insts[-1]
         bblocks[i] = bblocks[i].popinst()
         numvarlists = len(foreach_start.ops[0][1])
@@ -912,7 +914,8 @@ def _bblock_flow(bblocks):
         foreach = BCForeach(None, [begin] + bblocks[i+1:i+3] + [end])
         bblocks[i] = bblocks[i].appendinsts([foreach])
         bblocks[i+1:i+3] = []
-        return True, None
+        changeend = ((i, len(bblocks[i].insts)-1), (i, len(bblocks[i].insts)))
+        return True, (changestart, changeend)
 
     return False, None
 
