@@ -34,7 +34,8 @@ var ActionArea = React.createClass({
     render: function () {
         var kdFire = function (keycode) {
            return function () {
-               // TODO: what's the right way to create a keydown event?
+               // Actual KeyboardEvent is broken in Chrome...
+               // http://stackoverflow.com/questions/1897333/firing-a-keyboard-event-on-chrome
                var e = new Event('keydown');
                e.keyCode = keycode;
                document.dispatchEvent(e);
