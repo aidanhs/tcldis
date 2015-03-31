@@ -789,7 +789,7 @@ def _bblock_flow(bblocks):
     # execution branches with a value. TODO: this is an implementation detail
     # and should be handled more generically.
     # The overall structure consists of 4 basic blocks, arranged like so:
-    # [if] -> [ifcode]  [elsecode] -> [end (unrelated code after if)]
+    # [if] -> [ifcode]  [elsecode] -> [unrelated code after if]
     #   |---------|----------^          ^        <- conditional jump to else
     #             |---------------------|        <- unconditional jump to end
     # We only care about the end block for checking that everything does end up
@@ -813,14 +813,16 @@ def _bblock_flow(bblocks):
         targets = _get_targets(bblocks)
         if targets.count(bblocks[i+1].loc) > 0: continue
         if targets.count(bblocks[i+2].loc) > 1: continue
+        # Looks like an 'if', apply the bblock transformation
+        changestart = ((i, 0), (i+2, len(bblocks[i+2].insts)))
         jumps = [bblocks[i+0].insts[-1], bblocks[i+1].insts[-1]]
         bblocks[i+0] = bblocks[i+0].popinst()
         bblocks[i+1] = bblocks[i+1].popinst()
         assert jumps == [jump0, jump1]
         bblocks[i] = bblocks[i].appendinsts([BCIf(jumps, bblocks[i+1:i+3])])
         bblocks[i+1:i+3] = []
-
-        return True
+        changeend = ((i, 0), (i, len(bblocks[i].insts)))
+        return True, (changestart, changeend)
 
     # Recognise a catch
     # The overall structure consists of 3 basic blocks, arranged like so:
@@ -864,7 +866,7 @@ def _bblock_flow(bblocks):
         bblocks[i] = begin.replaceinst((0, len(begin.insts)), [bccatch])
         bblocks[i+2] = end
         bblocks[i+1:i+2] = []
-        return True
+        return True, None
 
     # Recognise a foreach.
     # The overall structure consists of 4 basic blocks, arranged like so:
@@ -907,9 +909,9 @@ def _bblock_flow(bblocks):
         foreach = BCForeach(None, [begin] + bblocks[i+1:i+3] + [end])
         bblocks[i] = bblocks[i].appendinsts([foreach])
         bblocks[i+1:i+3] = []
-        return True
+        return True, None
 
-    return False
+    return False, None
 
 def _bblock_join(bblocks):
 
@@ -991,8 +993,11 @@ def _decompile(bc):
             changed = _bblock_join(bblocks)
             changes = []
         if not changed:
-            changed = _bblock_flow(bblocks)
+            changed, change = _bblock_flow(bblocks)
             changes = []
+            # interim measure
+            if change is not None:
+                changes = [change]
         if changed: yield bblocks[:], changes
 
 def _bblocks_fmt(bblocks):
