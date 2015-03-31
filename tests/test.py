@@ -104,21 +104,58 @@ if {$a} {
 }
 ''')) # **
 
+# ----------
+
+def checkDecompileStepStructure(self, steps, changes):
+    self.assertIs(type(steps), list)
+    self.assertGreater(len(steps), 0)
+    for snapshot, changeset in zip(steps, changes):
+        self.assertIs(type(snapshot), list)
+        self.assertGreater(len(snapshot), 0)
+        for bblock in snapshot:
+            # Can have 0 length bblocks in an intermediary step
+            self.assertIs(type(bblock), list)
+            for line in bblock:
+                self.assertIs(type(line), unicode)
+                self.assertGreater(len(line), 0)
+
+    # Check we have no 0 length bblocks in final result
+    self.assertGreater(len(steps), 0)
+    self.assertGreater(len(steps[-1]), 0) # snapshot
+    for bblock in steps[-1]:
+        self.assertGreater(len(bblock), 0)
+
+# ----------
+
 class TestTclScript(unittest.TestCase):
     def assertTclEqual(self, tcl):
         self.assertEqual(tcl, tcldis.decompile(tcldis.getbc(tcl)))
+    def assertDecompileStepStructure(self, tcl):
+        steps, changes = tcldis.decompile_steps(tcldis.getbc(tcl))
+        checkDecompileStepStructure(self, steps, changes)
 
 class TestTclProc(unittest.TestCase):
     def assertTclEqual(self, tcl):
         proctcl = 'proc p {} {\n' + tcl + '\n}'
         tclpy.eval(proctcl)
         self.assertEqual(tcl, tcldis.decompile(tcldis.getbc(proc_name='p')))
+    def assertDecompileStepStructure(self, tcl):
+        proctcl = 'proc p {} {\n' + tcl + '\n}'
+        tclpy.eval(proctcl)
+        steps, changes = tcldis.decompile_steps(tcldis.getbc(proc_name='p'))
+        checkDecompileStepStructure(self, steps, changes)
+
 
 def setupcase(test_class, name, case):
     setattr(
         test_class,
-        'test_' + name,
+        'test_decompile_' + name,
         lambda self: self.assertTclEqual(case)
+    )
+    setattr(
+        test_class,
+        'test_decompilesteps_' + name,
+        lambda self: self.assertDecompileStepStructure(case)
     )
 
 for name, case in cases:
