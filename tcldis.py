@@ -736,7 +736,7 @@ def _bblock_reduce(bc, bblock):
 
         if inst.name in ['push1', 'push4']:
             bblock = bblock.replaceinst(i, [BCLiteral(inst, bc.literal(inst.ops[0]))])
-            changes.append((i, i))
+            changes.append(((i, i+1), (i, i+1)))
 
         elif inst.name in INST_REDUCTIONS:
             IRED = INST_REDUCTIONS[inst.name]
@@ -1026,10 +1026,6 @@ def decompile_steps(bc):
         for bbi, (bblock, bbchanges) in enumerate(zip(bblocks, bbschanges)):
             step.append(bblock.fmt_insts())
             for lfrom, lto in bbchanges:
-                if type(lfrom) is int:
-                    lfrom = (lfrom, lfrom + 1)
-                if type(lto) is int:
-                    lto = (lto, lto + 1)
                 assert type(lfrom) is type(lto) is tuple
                 changes.append({
                     'step': si-1,
