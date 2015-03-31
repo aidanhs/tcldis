@@ -187,12 +187,24 @@ var DecompileSteps = React.createClass({
     },
     changeStepIdx: function (idxChange) {
         var stepIdx = this.state.stepIdx + idxChange;
-        if (!(stepIdx < 0 || stepIdx >= this.props.steps.length)) {
-            this.setState({'stepIdx': stepIdx});
+        if (stepIdx < 0 || stepIdx >= this.props.steps.length) {
+            return;
         }
-        // Lazy way of updating the offsets - since react re-uses the
-        // DOM nodes, scrolled elements will be in the same place.
-        this.handleScroll();
+        // Drop the offset of the step that will be removed.
+        var i;
+        var offsets = this.state.stepScroll.slice();
+        for (i = 0; i < idxChange; i++) {
+            offsets.splice(0, 1);
+            offsets.push(0);
+        }
+        for (i = 0; i > idxChange; i--) {
+            offsets.splice(-1, 1);
+            offsets.unshift(0);
+        }
+        this.setState({
+            'stepIdx': stepIdx,
+            'stepScroll': offsets
+        });
     },
     componentDidMount: function () {
         document.addEventListener('keydown', (function (e) {
@@ -200,6 +212,13 @@ var DecompileSteps = React.createClass({
             if (e.target.nodeName === 'TEXTAREA') { return; }
             return this.handleKeyDown(e);
         }).bind(this));
+    },
+    componentDidUpdate: function () {
+        var steps = this.getDOMNode().querySelectorAll('#mainsteps > .step');
+        var offsets = this.state.stepScroll;
+        [].forEach.call(steps, function (e, i) {
+            e.children[0].scrollTop = offsets[i];
+        });
     },
     handleScroll: function (e) {
         var steps = this.getDOMNode().querySelectorAll('#mainsteps > .step');
