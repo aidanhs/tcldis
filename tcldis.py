@@ -959,7 +959,7 @@ def _decompile(bc):
     assert isinstance(bc, BC)
     insts = getinsts(bc)
     bblocks = _bblock_create(insts)
-    yield bblocks[:], []
+    yield bblocks[:], [[]] * len(bblocks)
     # Reduce bblock logic
     hackedbblocks, changes = unzip([_bblock_hack(bc, bblock) for bblock in bblocks])
     if any([b1 is not b2 for b1, b2 in zip(bblocks, hackedbblocks)]):
@@ -971,9 +971,9 @@ def _decompile(bc):
         reducedblocks, changes = unzip([_bblock_reduce(bc, bblock) for bblock in bblocks])
         change = any([b1 is not b2 for b1, b2 in zip(bblocks, reducedblocks)])
         bblocks = reducedblocks
-        if not change: changes = []
-        change = change or _bblock_join(bblocks)
-        change = change or _bblock_flow(bblocks)
+        if not change:
+            change = _bblock_join(bblocks) or _bblock_flow(bblocks)
+            changes = [[]] * len(bblocks)
         if change: yield bblocks[:], changes
 
 def _bblocks_fmt(bblocks):
@@ -1019,8 +1019,6 @@ def decompile_steps(bc):
     changes = []
     for si, (bblocks, bbschanges) in enumerate(_decompile(bc)):
         step = []
-        if bbschanges == []:
-            bbschanges = [[]] * len(bblocks)
         assert len(bblocks) == len(bbschanges)
         for bbi, (bblock, bbchanges) in enumerate(zip(bblocks, bbschanges)):
             step.append(bblock.fmt_insts())
