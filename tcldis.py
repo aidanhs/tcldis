@@ -722,7 +722,7 @@ def _bblock_hack(bc, bblock):
         variableis.append(i)
     for i in reversed(variableis):
         bblock = bblock.replaceinst(i+1, [])
-        changes.append((i+1, None))
+        changes.append(((i+1, i+2), (i+1, i+1)))
     return bblock, changes
 
 def _bblock_reduce(bc, bblock):
