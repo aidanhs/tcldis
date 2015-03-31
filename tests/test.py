@@ -6,44 +6,44 @@ from textwrap import dedent
 
 # TODO: ensure cases marked ** compile to more than just a proc call
 cases = []
-cases.append(('set', 'set x 15\n'))
-cases.append(('set_array', 'set x(a) 15\n'))
-cases.append(('array_set', 'array set x {a 1 b 2}\n')) # **
-cases.append(('ref', 'puts $a\nputs $u::a\n'))
-cases.append(('ref_array', 'puts $x(a)\n'))
-cases.append(('incr', 'incr x\nincr x 5\n')) # **
-cases.append(('variable', 'variable x\n')) # **
-cases.append(('variable2', 'variable NS::x\n')) # **
+cases.append(('set', u'set x 15\n'))
+cases.append(('set_array', u'set x(a) 15\n'))
+cases.append(('array_set', u'array set x {a 1 b 2}\n')) # **
+cases.append(('ref', u'puts $a\nputs $u::a\n'))
+cases.append(('ref_array', u'puts $x(a)\n'))
+cases.append(('incr', u'incr x\nincr x 5\n')) # **
+cases.append(('variable', u'variable x\n')) # **
+cases.append(('variable2', u'variable NS::x\n')) # **
 
 #cases.append(('list1', 'puts [list a b c]\n')) # **
-cases.append(('list2', 'puts [list $a b c]\n')) # **
+cases.append(('list2', u'puts [list $a b c]\n')) # **
 
-cases.append(('expr', 'puts [expr {$a > 1}]\n')) # **
-cases.append(('catch', '''\
+cases.append(('expr', u'puts [expr {$a > 1}]\n')) # **
+cases.append(('catch', u'''\
 catch {my_bad_proc a b} msg
 ''')) # **
 
-cases.append(('return', 'return 15\n')) # **
-cases.append(('if', '''\
+cases.append(('return', u'return 15\n')) # **
+cases.append(('if', u'''\
 if {$a} {
 \tputs a
 }
 ''')) # **
-cases.append(('if_else', '''\
+cases.append(('if_else', u'''\
 if {$a} {
 \tputs a
 } else {
 \tputs b
 }
 ''')) # **
-#cases.append(('if_elseif', '''\
+#cases.append(('if_elseif', u'''\
 #if {$a} {
 #\tputs a
 #} elseif {$b} {
 #\tputs b
 #}
 #''')) # **
-#cases.append(('if_elseif_else', '''\
+#cases.append(('if_elseif_else', u'''\
 #if {$a} {
 #\tputs a
 #} elseif {$b} {
@@ -52,7 +52,7 @@ if {$a} {
 #\tputs c
 #}
 #''')) # **
-#cases.append(('if_elseif_elseif_else', '''\
+#cases.append(('if_elseif_elseif_else', u'''\
 #if {$a} {
 #\tputs a
 #} elseif {$b} {
@@ -63,7 +63,7 @@ if {$a} {
 #\tputs d
 #}
 #''')) # **
-cases.append(('switch', '''\
+cases.append(('switch', u'''\
 switch -exact $a {
 \tpat1 {
 \t\tputs my_body_1
@@ -76,12 +76,12 @@ switch -exact $a {
 \t}
 }
 ''')) # **
-#cases.append(('for', '''\
+#cases.append(('for', u'''\
 #for {set i 0} {$i < 5} {incr i} {
 #\tputs $i
 #}
 #''')) # **
-cases.append(('foreach', '''\
+cases.append(('foreach', u'''\
 puts x
 foreach {a b} {1 2 3 4} {
 	puts $a
@@ -93,7 +93,7 @@ puts x
 # TODO: dict for **
 # TODO: expr **
 
-cases.append(('if_nested_catch', '''\
+cases.append(('if_nested_catch', u'''\
 if {$a} {
 \tif {[catch {xx $b} c]} {
 \t\tputs b

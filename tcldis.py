@@ -8,6 +8,8 @@ import _tcldis
 printbc = _tcldis.printbc
 def getbc(*args, **kwargs):
     bytecode, bcliterals, bclocals, bcauxs = _tcldis.getbc(*args, **kwargs)
+    bcliterals = [bclit.decode('utf-8') for bclit in bcliterals]
+    bclocals =   [bcloc.decode('utf-8') for bcloc in bclocals]
     return BC(bytecode, bcliterals, bclocals, bcauxs)
 getbc.__doc__ = _tcldis.getbc.__doc__
 literal_convert = _tcldis.literal_convert
@@ -153,7 +155,7 @@ class BCValue(BCValueTuple):
         if type(value) is list:
             assert all([v.stackn == 1 for v in value if isinstance(v, BCValue)])
             value = tuple(value)
-        elif type(value) is str:
+        elif type(value) is unicode:
             pass
         else:
             assert False
@@ -171,12 +173,12 @@ class BCValue(BCValueTuple):
 class BCLiteral(BCValue):
     def __init__(self, *args, **kwargs):
         super(BCLiteral, self).__init__(*args, **kwargs)
-        assert type(self.value) is str
+        assert type(self.value) is unicode
     def __repr__(self):
         return 'BCLiteral(%s)' % (repr(self.value),)
     def fmt(self):
         val = self.value
-        if val == '': return '{}'
+        if val == '': return u'{}'
         if not any([c in val for c in '$[]{}""\f\r\n\t\v ']):
             return val
 
@@ -209,9 +211,9 @@ class BCLiteral(BCValue):
                 .replace(']', '\\]')
                 .replace('$', '\\$')
             )
-            val = '"' + val + '"'
+            val = u'"%s"' % (val,)
         else:
-            val = '{' + val + '}'
+            val = u'{%s}' % (val,)
         return val
 
 class BCVarRef(BCValue):
@@ -221,7 +223,7 @@ class BCVarRef(BCValue):
     def __repr__(self):
         return 'BCVarRef(%s)' % (repr(self.value),)
     def fmt(self):
-        return '$' + self.value[0].fmt()
+        return u'$' + self.value[0].fmt()
 
 class BCArrayRef(BCValue):
     def __init__(self, *args, **kwargs):
@@ -230,7 +232,7 @@ class BCArrayRef(BCValue):
     def __repr__(self):
         return 'BCArrayRef(%s)' % (repr(self.value),)
     def fmt(self):
-        return '$' + self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
+        return u'$%s(%s)' % (self.value[0].fmt(), self.value[1].fmt())
 
 class BCConcat(BCValue):
     def __init__(self, *args, **kwargs):
@@ -241,7 +243,7 @@ class BCConcat(BCValue):
     def fmt(self):
         # TODO: this won't always work, need to be careful of
         # literals following variables
-        return '"' + ''.join([v.fmt() for v in self.value]) + '"'
+        return u'"%s"' % (u''.join([v.fmt() for v in self.value]),)
 
 class BCProcCall(BCValue):
     def __init__(self, *args, **kwargs):
@@ -251,11 +253,11 @@ class BCProcCall(BCValue):
         return 'BCProcCall(%s)' % (self.value,)
     def fmt(self):
         args = list(self.value)
-        if args[0].fmt() == '::tcl::array::set':
+        if args[0].fmt() == u'::tcl::array::set':
             args[0:1] = [BCLiteral(None, 'array'), BCLiteral(None, 'set')]
-        cmd = ' '.join([arg.fmt() for arg in args])
+        cmd = u' '.join([arg.fmt() for arg in args])
         if self.stackn:
-            cmd = '[' + cmd + ']'
+            cmd = u'[%s]' % (cmd,)
         return cmd
 
 class BCSet(BCProcCall):
@@ -265,9 +267,9 @@ class BCSet(BCProcCall):
     def __repr__(self):
         return 'BCSet(%s)' % (self.value,)
     def fmt(self):
-        cmd = 'set %s %s' % tuple([v.fmt() for v in self.value])
+        cmd = u'set %s %s' % tuple([v.fmt() for v in self.value])
         if self.stackn:
-            cmd = '[' + cmd + ']'
+            cmd = u'[%s]' % (cmd,)
         return cmd
 
 # This one is odd. inst.ops[0] is the index to the locals table, kv[0]
@@ -285,21 +287,21 @@ class BCVariable(BCProcCall):
     def __repr__(self):
         return 'BCVariable(%s)' % (self.value,)
     def fmt(self):
-        cmd = 'variable %s' % (self.value[0].fmt(),)
+        cmd = u'variable %s' % (self.value[0].fmt(),)
         if self.stackn:
-            cmd = '[' + cmd + ']'
+            cmd = u'[%s]' % (cmd,)
         return cmd
 
 class BCExpr(BCValue):
     _exprmap = {
-        'gt': ('>', 2),
-        'lt': ('<', 2),
-        'ge': ('>=', 2),
-        'le': ('<=', 2),
-        'eq': ('==', 2),
-        'neq': ('!=', 2),
-        'add': ('+', 2),
-        'not': ('!', 1),
+        'gt': (u'>', 2),
+        'lt': (u'<', 2),
+        'ge': (u'>=', 2),
+        'le': (u'<=', 2),
+        'eq': (u'==', 2),
+        'neq': (u'!=', 2),
+        'add': (u'+', 2),
+        'not': (u'!', 1),
     }
     def __init__(self, *args, **kwargs):
         super(BCExpr, self).__init__(*args, **kwargs)
@@ -310,12 +312,12 @@ class BCExpr(BCValue):
     def expr(self):
         op, nargs = self._exprmap[self.inst.name]
         if nargs == 1:
-            expr = op + self.value[0].fmt()
+            expr = u'%s %s' % (op, self.value[0].fmt())
         elif nargs == 2:
-            expr = self.value[0].fmt() + ' ' + op + ' ' + self.value[1].fmt()
+            expr = u'%s %s %s' % (self.value[0].fmt(), op, self.value[1].fmt())
         return expr
     def fmt(self):
-        return '[expr {' + self.expr() + '}]'
+        return u'[expr {%s}]' % (self.expr(),)
 
 class BCReturn(BCProcCall):
     def __init__(self, *args, **kwargs):
@@ -327,8 +329,8 @@ class BCReturn(BCProcCall):
     def __repr__(self):
         return 'BCReturn(%s)' % (repr(self.value),)
     def fmt(self):
-        if self.value[0].value == '': return 'return'
-        return 'return ' + self.value[0].fmt()
+        if self.value[0].value == '': return u'return'
+        return u'return %s' % (self.value[0].fmt(),)
 
 # TODO: I'm totally unsure about where this goes. tclCompile.c says it has a -1
 # stack effect, which means it doesn't put anything back on the stack. But
@@ -348,7 +350,7 @@ class BCDone(BCProcCall):
         # In the general case it's impossible to guess whether 'return' was written.
         if isinstance(self.value[0], BCProcCall):
             return self.value[0].destack().fmt()
-        return 'return ' + self.value[0].fmt()
+        return u'return %s' % (self.value[0].fmt(),)
 
 # self.value contains two bblocks, self.inst contains two jumps
 class BCIf(BCProcCall):
@@ -376,24 +378,20 @@ class BCIf(BCProcCall):
         if isinstance(self.inst[0].value[0], BCExpr):
             conditionstr = self.inst[0].value[0].expr()
             if self.inst[0].on is True:
-                conditionstr = '!(' + conditionstr + ')'
+                conditionstr = u'!(%s)' % (conditionstr,)
         else:
             conditionstr = self.inst[0].value[0].fmt()
             if self.inst[0].on is True:
-                conditionstr = '!' + conditionstr
+                conditionstr = '!%s' % (conditionstr,)
         cmd = (
-            'if {%s} {' +
-            '\n\t' + value[0].fmt().replace('\n', '\n\t') + '\n' +
-            '}'
-        ) % (conditionstr,)
+            u'if {%s} {\n\t%s\n}' % (conditionstr, value[0].fmt().replace('\n', '\n\t'))
+        )
         if len(value[1].insts) > 0:
             cmd += (
-                ' else {' +
-                '\n\t' + value[1].fmt().replace('\n', '\n\t') + '\n' +
-                '}'
+                u' else {\n\t%s\n}' % (value[1].fmt().replace('\n', '\n\t'),)
             )
         if self.stackn:
-            cmd = '[' + cmd + ']'
+            cmd = u'[%s]' % (cmd,)
         return cmd
 
 class BCCatch(BCProcCall):
@@ -428,9 +426,9 @@ class BCCatch(BCProcCall):
         begin = begin.popinst().popinst().replaceinst(0, [])
         catchblock = begin.fmt()
         varname = end.insts[2].ops[0]
-        cmd = 'catch {%s} %s' % (catchblock, varname)
+        cmd = u'catch {%s} %s' % (catchblock, varname)
         if self.stackn:
-            cmd = '[' + cmd + ']'
+            cmd = u'[%s]' % (cmd,)
         return cmd
 
 class BCForeach(BCProcCall):
@@ -468,9 +466,9 @@ class BCForeach(BCProcCall):
         fevars = ' '.join(value[0].insts[1].ops[0][1][0])
         felist = value[0].insts[0].value[1].fmt()
         feblock = '\n\t' + value[2].fmt().replace('\n', '\n\t') + '\n'
-        cmd = 'foreach {%s} %s {%s}' % (fevars, felist, feblock)
+        cmd = u'foreach {%s} %s {%s}' % (fevars, felist, feblock)
         if self.stackn:
-            cmd = '[' + cmd + ']'
+            cmd = u'[%s]' % (cmd,)
         return cmd
 
 ####################################################################
@@ -498,7 +496,7 @@ class BCJump(BCNonValue):
         return 'BCJump%s->%s' % (condition, self.inst.targetloc)
     def fmt(self):
         #return 'JUMP%s(%s)' % (self.on, self.value[0].fmt())
-        return str(self)
+        return unicode(self)
 
 # Just a formatting container for the form a(x)
 class BCArrayElt(BCNonValue):
@@ -508,7 +506,7 @@ class BCArrayElt(BCNonValue):
     def __repr__(self):
         return 'BCArrayElt(%s)' % (repr(self.value),)
     def fmt(self):
-        return self.value[0].fmt() + '(' + self.value[1].fmt() + ')'
+        return u'%s(%s)' % (self.value[0].fmt(), self.value[1].fmt())
 
 ##############################
 # Any basic block structures #
@@ -540,7 +538,7 @@ class BBlock(object):
         fmt_list = []
         for inst in self.insts:
             if isinstance(inst, Inst):
-                fmt_str = str(inst)
+                fmt_str = unicode(inst)
             elif (isinstance(inst, BCValue) and not isinstance(inst, BCDone) and
                     inst.stackn == 1):
                 # BCDone is an odd one - it leaves something on the stack.
@@ -549,13 +547,13 @@ class BBlock(object):
                 # display a stack indicator, but we do want to leave stackn as 1
                 # for programmatic inspection.
                 # >> symbol
-                fmt_str = u'\u00bb ' + inst.fmt()
+                fmt_str = u'\u00bb %s' % (inst.fmt(),)
             else:
                 fmt_str = inst.fmt()
             fmt_list.append(fmt_str)
         return fmt_list
     def fmt(self):
-        return '\n'.join(self.fmt_insts())
+        return u'\n'.join(self.fmt_insts())
 
 ########################
 # Functions start here #
@@ -655,11 +653,11 @@ def _inst_reductions():
         # Callers
         'invokeStk1': [[firstop], BCProcCall],
         'invokeStk4': [[firstop], BCProcCall],
-        'list':[[firstop], lambda inst, kv: BCProcCall(inst, [lit('list')] + kv)],
-        'listLength': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('llength'), kv[0]])],
-        'incrStkImm': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('incr'), kv[0]] + ([lit(str(inst.ops[0]))] if inst.ops[0] != 1 else []))],
-        'incrScalar1Imm': [[N(0)], lambda inst, kv: BCProcCall(inst, [lit('incr'), lit(inst.ops[0])] + ([lit(str(inst.ops[1]))] if inst.ops[1] != 1 else []))],
-        'incrScalarStkImm': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit('incr'), kv[0]] + ([lit(str(inst.ops[0]))] if inst.ops[0] != 1 else []))],
+        'list':[[firstop], lambda inst, kv: BCProcCall(inst, [lit(u'list')] + kv)],
+        'listLength': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit(u'llength'), kv[0]])],
+        'incrStkImm': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit(u'incr'), kv[0]] + ([lit(unicode(inst.ops[0]))] if inst.ops[0] != 1 else []))],
+        'incrScalar1Imm': [[N(0)], lambda inst, kv: BCProcCall(inst, [lit(u'incr'), lit(inst.ops[0])] + ([lit(unicode(inst.ops[1]))] if inst.ops[1] != 1 else []))],
+        'incrScalarStkImm': [[N(1)], lambda inst, kv: BCProcCall(inst, [lit(u'incr'), kv[0]] + ([lit(unicode(inst.ops[0]))] if inst.ops[0] != 1 else []))],
         'variable': [[N(1)], BCVariable],
         # Jumps
         'jump1': [[N(0)], lambda i, v: BCJump(None, i, v)],
