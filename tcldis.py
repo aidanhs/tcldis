@@ -984,17 +984,16 @@ def _decompile(bc):
 
     # Reduce bblock logic
     hackedbblocks, changes = _bblocks_operation(_bblock_hack, bc, bblocks)
-    changed = any([b1 is not b2 for b1, b2 in zip(bblocks, hackedbblocks)])
-    if changed:
+    if changes:
         bblocks = hackedbblocks
         yield bblocks[:], changes
 
     changed = True
     while changed:
         changed = False
-        reducedblocks, changes = _bblocks_operation(_bblock_reduce, bc, bblocks)
-        changed = any([b1 is not b2 for b1, b2 in zip(bblocks, reducedblocks)])
-        bblocks = reducedblocks
+        if not changed:
+            bblocks, changes = _bblocks_operation(_bblock_reduce, bc, bblocks)
+            changed = bool(changes)
         if not changed:
             changed = _bblock_join(bblocks)
             changes = []
