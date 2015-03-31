@@ -965,16 +965,16 @@ def _decompile(bc):
     if any([b1 is not b2 for b1, b2 in zip(bblocks, hackedbblocks)]):
         yield bblocks[:], changes
     bblocks = hackedbblocks
-    change = True
-    while change:
-        change = False
+    changed = True
+    while changed:
+        changed = False
         reducedblocks, changes = unzip([_bblock_reduce(bc, bblock) for bblock in bblocks])
-        change = any([b1 is not b2 for b1, b2 in zip(bblocks, reducedblocks)])
+        changed = any([b1 is not b2 for b1, b2 in zip(bblocks, reducedblocks)])
         bblocks = reducedblocks
-        if not change:
-            change = _bblock_join(bblocks) or _bblock_flow(bblocks)
+        if not changed:
+            changed = _bblock_join(bblocks) or _bblock_flow(bblocks)
             changes = [[]] * len(bblocks)
-        if change: yield bblocks[:], changes
+        if changed: yield bblocks[:], changes
 
 def _bblocks_fmt(bblocks):
     outstr = ''
