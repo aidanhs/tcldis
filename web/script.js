@@ -5,6 +5,11 @@ var padwidth = 50;
 var linemult = 1.25;
 var fontsize = 12 * linemult;
 
+var larrow = 37;
+var uarrow = 38;
+var rarrow = 39;
+var darrow = 40;
+
 // These must be user-supplied
 var fillinFn = function () {
     alert('Must define getInitialCode and getDecompileSteps globally');
@@ -27,12 +32,26 @@ var ActionArea = React.createClass({
         this.props.decompileCB(this.state.code);
     },
     render: function () {
+        var kdFire = function (keycode) {
+           return function () {
+               // TODO: what's the right way to create a keydown event?
+               var e = new Event('keydown');
+               e.keyCode = keycode;
+               document.dispatchEvent(e);
+           };
+        };
         return (
             <div id='actionarea'>
-                <div><div id='actionbuttons'>
-                    <div><button onClick={this.onDecompileClick}>Decompile!</button></div>
-                    <div><button onClick={this.helpMe}>Help!</button></div>
-                </div></div>
+                <div>
+                    <div id='directionbuttons'>
+                        <button onClick={kdFire(larrow)} style={{'width': '35%', 'left': '0', 'top': '0', 'bottom': '0'}}>&lt;</button>
+                        <button onClick={kdFire(uarrow)} style={{'width': '30%', 'left': '35%', 'right': '35%', 'height': '50%', 'top': '0'}}>^</button>
+                        <button onClick={kdFire(darrow)} style={{'width': '30%', 'left': '35%', 'right': '35%', 'height': '50%', 'bottom': '0'}}>v</button>
+                        <button onClick={kdFire(rarrow)} style={{'width': '35%', 'right': '0', 'top': '0', 'bottom': '0'}}>&gt;</button>
+                    </div>
+                    <div style={{'textAlign': 'center'}}>(you can also use the arrow keys)</div>
+                    <button id='decompilebutton' onClick={this.onDecompileClick}>Decompile!</button>
+                </div>
                 <div>
                     <textarea onChange={this.handleChange} value={this.state.code} />
                 </div>
@@ -154,11 +173,10 @@ var DecompileSteps = React.createClass({
     handleKeyDown: function (e) {
         var key = e.keyCode || e.charCode;
         var stepIdx = this.state.stepIdx;
-        // 37 <-, 38 ^, 39 ->, 40 \/
-        if (key === 37) { this.changeStepIdx(-1); }
-        else if (key === 38) { this.showMiniSteps(true); }
-        else if (key === 39) { this.changeStepIdx(1); }
-        else if (key === 40) { this.showMiniSteps(false); }
+        if (key === larrow) { this.changeStepIdx(-1); }
+        else if (key === rarrow) { this.changeStepIdx(1); }
+        else if (key === uarrow) { this.showMiniSteps(true); }
+        else if (key === darrow) { this.showMiniSteps(false); }
         else { return true; }
         e.preventDefault();
         return false;
@@ -177,14 +195,8 @@ var DecompileSteps = React.createClass({
     },
     componentDidMount: function () {
         document.addEventListener('keydown', (function (e) {
-            // Is this an event that was fired on us?
-            var target = e.target;
-            if (target != document && target != document.body) {
-                while (target.parentNode != document.body) {
-                    target = target.parentNode;
-                }
-                if (target != this.getDOMNode()) { return; }
-            }
+            // If it's not fired on the textarea, we're probably ok to handle it
+            if (e.target.nodeName === 'TEXTAREA') { return; }
             return this.handleKeyDown(e);
         }).bind(this));
     },
