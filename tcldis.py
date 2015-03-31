@@ -847,6 +847,8 @@ def _bblock_flow(bblocks):
         assert not (_is_catch_end(middle) or _is_catch_begin(middle))
         if any([isinstance(inst, Inst) for inst in begin.insts[1:]]):
             continue
+        # Looks like a 'catch', apply the bblock transformation
+        changestart = ((i, 0), (i+2, 4))
         endcatchinst = end.insts[0]
         end = end.replaceinst(0, [])
         endcatch = BBlock([endcatchinst], endcatchinst.loc)
@@ -866,7 +868,8 @@ def _bblock_flow(bblocks):
         bblocks[i] = begin.replaceinst((0, len(begin.insts)), [bccatch])
         bblocks[i+2] = end
         bblocks[i+1:i+2] = []
-        return True, None
+        changeend = ((i, 0), (i, len(bblocks[i].insts)))
+        return True, (changestart, changeend)
 
     # Recognise a foreach.
     # The overall structure consists of 4 basic blocks, arranged like so:
