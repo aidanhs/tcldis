@@ -7,6 +7,15 @@ from collections import namedtuple, OrderedDict
 import _tcldis
 printbc = _tcldis.printbc
 def getbc(*args, **kwargs):
+    """
+    Accepts a keyword argument of:
+     - `tcl_code` - a string of valid Tcl to compile
+     - `tclobj_ptr` - a raw memory address pointing to a bytecode Tcl
+       object - VERY DANGEROUS
+     - `proc_name` - the name of a proc in the interpreter, probably
+       created by libtclpy
+    Returns a `BC` object containing information about the bytecode.
+    """
     bytecode, bcliterals, bclocals, bcauxs = _tcldis.getbc(*args, **kwargs)
     bcliterals = [bclit.decode('utf-8') for bclit in bcliterals]
     bclocals =   [bcloc.decode('utf-8') for bcloc in bclocals]

@@ -22,11 +22,19 @@ Reference:
    - `side effects: none`
  - `tcldis.printbc(tcl_code)`
    - `takes: string of valid tcl code`
-   - `returns: a human readable interpretation of the code when compiled`
+   - `returns: a human readable interpretation of Tcl bytecode`
    - `side effects: none`
- - `tcldis.getbc(tcl_code)`
-   - `takes: string of valid tcl code`
-   - `returns: byte array of compiled Tcl bytecode, list of literal values`
+ - `tcldis.getbc(tcl_code)` - see docstring
+   - `takes: string of valid tcl code, a pointer to a Tcl_Obj or a proc name`
+   - `returns: a BC object containing information about the bytecode`
+   - `side effects: none`
+ - `tcldis.decompile(bytecode)`
+   - `takes: a BC object as returned by getbc`
+   - `returns: string representing best-effort attempt at decompiling bytecode`
+   - `side effects: none`
+ - `tcldis.decompile_steps(bytecode)` - see docsting
+   - `takes: a BC object as returned by getbc`
+   - `returns: a list of steps and changes from the decompilation process`
    - `side effects: none`
 
 UNIX BUILD
