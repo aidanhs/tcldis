@@ -992,19 +992,16 @@ def _decompile(bc):
         bblocks = hackedbblocks
         yield bblocks[:], changes
 
-    changed = True
-    while changed:
-        changed = False
-        if not changed:
+    changes = True
+    while changes:
+        changes = []
+        if not changes:
             bblocks, changes = _bblocks_operation(_bblock_reduce, bc, bblocks)
-            changed = bool(changes)
-        if not changed:
+        if not changes:
             changes = _bblock_join(bblocks)
-            changed = bool(changes)
-        if not changed:
+        if not changes:
             changes = _bblock_flow(bblocks)
-            changed = bool(changes)
-        if changed: yield bblocks[:], changes
+        if changes: yield bblocks[:], changes
 
 def _bblocks_fmt(bblocks):
     outstr = ''
