@@ -78,6 +78,16 @@ var StepPadding = React.createClass({
                 cs = c.step, // What step is this change transforming?
                 ss = steps;
 
+            if (c.tag === 'block_join' || c.tag === 'block_rm') {
+                var text = 'Internal rearrangement ';
+                text += c.tag === 'block_join' ? '(bblock joining)' : '(bblock elimination)';
+                var style = {'fontSize': 12, 'fontFamily': 'monospace'};
+                var x = 20, y = (-2.5*padwidth) + (0.25*style.fontSize);
+                return [
+                    <text key={1} x={x} y={y} transform='rotate(90)' style={style}>{text}</text>
+                ];
+            }
+
             numlines = 0;
             bbi = 0; // Which bblock are we looking at right now
             ii = 0; // Which 'line' in the bblock are we looking at right now
