@@ -31,6 +31,9 @@ var ActionArea = React.createClass({
     onDecompileClick: function () {
         this.props.decompileCB(this.state.code);
     },
+    onHelpButtonToggle: function () {
+        this.setState({'helpVisible': !this.state.helpVisible});
+    },
     render: function () {
         var kdFire = function (keycode) {
            return function () {
@@ -41,6 +44,69 @@ var ActionArea = React.createClass({
                document.dispatchEvent(e);
            };
         };
+        if (this.state.helpVisible) {
+            return (
+                <div id='helparea'><div style={{'max-width': '800px', 'margin': '0 auto'}}>
+                    <button id='helpbutton' onClick={this.onHelpButtonToggle}>Hide Info</button>
+                    <span className='commentary'>
+                        <u>What is it?</u>
+                        <br />
+                        TclDis was created when I was learning about Tcl
+                        bytecode. I'm fairly interested in decompilers so decided to
+                        to create a tool that (I believe) didn't exist, which would take
+                        some Tcl bytecode and output the Tcl code that compiled to it. I assume
+                        the only reason it's never been done for Tcl is the size of the
+                        community - both Python and Java have a number of tools like TclDis.
+                        <p />
+                        <u>Where's the code?</u>
+                        <br />
+                        On <a href='https://github.com/aidanhs/tcldis/'>GitHub</a>.
+                        Decompilation happens in a single ~1000 line Python
+                        file. C is used to extract
+                        information from the Tcl interpreter, and could be mostly
+                        replaced with `<span className='code'><a href='http://wiki.tcl.tk/40936'>getbytecode</a></span>`
+                        (which didn't exist when tcldis was created). React and JavaScript is used
+                        to create this web interface.
+                        <br />
+                        It's worth noting that the decompliation works based on patterns. This
+                        is a very simple (but inflexible) method of decompliation and becomes a
+                        pain when optimisers get clever and move instructions around.
+                        <p />
+                        <u>https://aidanhs.github.io/tcldis loads very slowly!</u>
+                        <br />
+                        Because TclDis uses Python, Tcl and C, it would usually be a server side
+                        application. But I wanted to host the whole project on GitHub pages with
+                        no external dependencies. By combining three of my other projects
+                        (<a href='https://github.com/aidanhs/libtclpy'>libtclpy</a>, <a href='https://github.com/aidanhs/empython'>empython</a> and <a href='https://github.com/aidanhs/emtcl'>emtcl</a>)
+                        and <a href='https://github.com/kripken/emscripten'>Emscripten</a> in
+                        a very <a href='https://github.com/aidanhs/tcldis/blob/gh-pages/script.sh'>particular</a> way,
+                        you get a Tcl decompiler in pure JS. Why so slow?
+                        You're actually running full Tcl and Python interpreters in the browser!
+                        <br />
+                        It's probably worth repeating that - Emscripten allows you to put
+                        together a Python and Tcl interpreter, a C extension to let them talk
+                        to each other, the entire Python standard library and the TclDis code
+                        itself in under 12MB. I think that's pretty good.
+                        <br />
+                        If you want to play with this, run:
+                        <br />
+                        <span className='code'>empython.eval('import tclpy');<br />
+                        empython.eval('tclpy.eval("puts [list 1 2 3]")');</span>
+                        <br />
+                        in your JavaScript console.
+                        <p />
+                        <u>There's a bug! Will you fix it?</u>
+                        <br />
+                        If causes a crash, possibly. Otherwise (e.g. recognising
+                        new instructions) probably not.
+                        <p />
+                        <u>Can I decompile .tbc files?</u>
+                        <br />
+                        In theory, but no support will be offered.
+                    </span>
+                </div></div>
+            );
+        }
         return (
             <div id='actionarea'>
                 <div>
@@ -51,6 +117,7 @@ var ActionArea = React.createClass({
                         <button onClick={kdFire(rarrow)} style={{'width': '35%', 'right': '0', 'top': '0', 'bottom': '0'}}>&gt;</button>
                     </div>
                     <div style={{'textAlign': 'center'}}>(you can also use the arrow keys)</div>
+                    <button id='helpbutton' onClick={this.onHelpButtonToggle}>Tell me more about TclDis!</button>
                     <button id='decompilebutton' onClick={this.onDecompileClick}>Decompile!</button>
                 </div>
                 <div>

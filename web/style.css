@@ -44,6 +44,22 @@ pre { margin: 0; }
     width: 100%;
     margin: 5px 0 5px 0;
 }
+#helpbutton {
+    height: 20px;
+    width: 100%;
+    margin: 2px 0 2px 0;
+}
+#helparea {
+    position: fixed;
+    left: 2%;
+    right: 2%;
+    top: 2%;
+    bottom: 2%;
+    padding: 15px;
+    background-color: grey;
+    z-index: 1000;
+    overflow: auto;
+}
 #actionarea > div+div { height: 100%; }
 #actionarea > div > textarea {
     position: relative;
@@ -86,10 +102,11 @@ pre { margin: 0; }
     overflow-x: auto;
     overflow-y: auto;
 }
-#mainsteps > div.step > .commentary {
+.commentary {
     font-size: 15px;
+    font-family: TimesNewRoman, 'Times New Roman', Times, Baskerville, Georgia, serif;;
 }
-#mainsteps > div.step > .commentary span.code {
+.commentary span.code {
     font-size: 12px;
     font-family: monospace;
     white-space: nowrap;
