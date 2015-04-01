@@ -19,6 +19,15 @@ JUMP_INSTRUCTIONS = [
     'jump1', 'jump4', 'jumpTrue1', 'jumpTrue4', 'jumpFalse1', 'jumpFalse4'
 ]
 
+TAG_BLOCK_JOIN = 'block_join'
+TAG_BLOCK_RM   = 'block_rm'
+TAG_FOREACH    = 'foreach'
+TAG_CATCH      = 'catch'
+TAG_IF         = 'if'
+TAG_I_PUSH     = 'i_push'
+TAG_I_OTHER    = 'i_other'
+TAG_H_VARIABLE = 'h_variable'
+
 def _getop(optype):
     """
     Given a C struct descriptor, return a function which will take the necessary
@@ -720,7 +729,7 @@ def _bblock_hack(bc, bblock):
         variableis.append(i)
     for i in reversed(variableis):
         bblock = bblock.replaceinst(i+1, [])
-        changes.append(((i+1, i+2), (i+1, i+1)))
+        changes.append((TAG_H_VARIABLE, (i+1, i+2), (i+1, i+1)))
     return bblock, changes
 
 def _bblock_reduce(bc, bblock):
@@ -734,7 +743,7 @@ def _bblock_reduce(bc, bblock):
 
         if inst.name in ['push1', 'push4']:
             bblock = bblock.replaceinst(i, [BCLiteral(inst, bc.literal(inst.ops[0]))])
-            changes.append(((i, i+1), (i, i+1)))
+            changes.append((TAG_I_PUSH, (i, i+1), (i, i+1)))
 
         elif inst.name in INST_REDUCTIONS:
             IRED = INST_REDUCTIONS[inst.name]
@@ -747,7 +756,7 @@ def _bblock_reduce(bc, bblock):
                 newinsts = [newinsts]
             irange = (i-len(arglist), i+1)
             bblock = bblock.replaceinst(irange, newinsts)
-            changes.append((irange, (irange[0], irange[0]+len(newinsts))))
+            changes.append((TAG_I_OTHER, irange, (irange[0], irange[0]+len(newinsts))))
 
         else:
             continue # No change, continue scanning basic blcok
@@ -822,7 +831,7 @@ def _bblock_flow(bblocks):
         bblocks[i] = bblocks[i].appendinsts([BCIf(jumps, bblocks[i+1:i+3])])
         bblocks[i+1:i+3] = []
         changeend = ((i, 0), (i, len(bblocks[i].insts)))
-        return [(changestart, changeend)]
+        return [(TAG_IF, changestart, changeend)]
 
     # Recognise a catch
     # The overall structure consists of 3 basic blocks, arranged like so:
@@ -869,7 +878,7 @@ def _bblock_flow(bblocks):
         bblocks[i+2] = end
         bblocks[i+1:i+2] = []
         changeend = ((i, 0), (i, len(bblocks[i].insts)))
-        return [(changestart, changeend)]
+        return [(TAG_CATCH, changestart, changeend)]
 
     # Recognise a foreach.
     # The overall structure consists of 4 basic blocks, arranged like so:
@@ -915,7 +924,7 @@ def _bblock_flow(bblocks):
         bblocks[i] = bblocks[i].appendinsts([foreach])
         bblocks[i+1:i+3] = []
         changeend = ((i, len(bblocks[i].insts)-1), (i, len(bblocks[i].insts)))
-        return [(changestart, changeend)]
+        return [(TAG_FOREACH, changestart, changeend)]
 
     return []
 
@@ -931,7 +940,7 @@ def _bblock_join(bblocks):
 
         previ = 0 if i == 0 else i-1
         previlen = len(bblocks[previ].insts)
-        return [(((i, 0), (i, 0)), ((previ, previlen), (previ, previlen)))]
+        return [(TAG_BLOCK_RM, ((i, 0), (i, 0)), ((previ, previlen), (previ, previlen)))]
 
     # Join together blocks if possible
     for i in range(len(bblocks)):
@@ -957,7 +966,7 @@ def _bblock_join(bblocks):
         bblocks[i] = bblock1.appendinsts(list(bblock2.insts))
         bblocks[i+1:i+2] = []
         changeend = ((i, 0), (i, len(bblocks[i].insts)))
-        return [(changestart, changeend)]
+        return [(TAG_BLOCK_JOIN, changestart, changeend)]
 
     return False
 
@@ -972,8 +981,8 @@ def _bblocks_operation(bblock_op, bc, bblocks):
     for bbi, (operbblock, bblockchanges) in enumerate(operlist):
         operbblocks.append(operbblock)
         operchanges.extend([
-            (((bbi, lfrom1), (bbi, lfrom2)), ((bbi, lto1), (bbi, lto2)))
-            for (lfrom1, lfrom2), (lto1, lto2) in bblockchanges
+            (tag, ((bbi, lfrom1), (bbi, lfrom2)), ((bbi, lto1), (bbi, lto2)))
+            for tag, (lfrom1, lfrom2), (lto1, lto2) in bblockchanges
         ])
     return operbblocks, operchanges
 
@@ -1035,6 +1044,7 @@ def decompile_steps(bc):
         'step': si,
         'from': ((bbfrom1, lfrom1), (bbfrom2, lfrom2)),
         'to':   ((bbto1, lto1), (bbto2, lto2)),
+        'tag':  tag,
     }
      - si      is the index of the step this change applies to
      - bbfrom1 is the index of the start block of the source changed lines
@@ -1045,6 +1055,7 @@ def decompile_steps(bc):
      - lto1    is the slice index of the start of the target changed lines
      - bbto2   is the index of the start block of the source changed lines
      - lto2    is the slice index of the end of the target change lines
+     - tag     is some string identifier of the type of change made
     Note that these are *slice* indexes, i.e. like python. So if lto1 and lto2
     are the same, it means the source lines have been reduced to a line of
     width 0 (i.e. have been removed entirely).
@@ -1056,11 +1067,12 @@ def decompile_steps(bc):
         for sbblock in sbblocks:
             step.append(sbblock.fmt_insts())
         for schange in schanges:
-            lfrom, lto = schange
+            tag, lfrom, lto = schange
             changes.append({
                 'step': si-1,
                 'from': lfrom,
                 'to': lto,
+                'tag': tag,
             })
         steps.append(step)
     return steps, changes

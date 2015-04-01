@@ -130,7 +130,7 @@ def checkDecompileStepStructure(self, steps, changes):
     self.assertGreater(len(changes), 0)
     for change in changes:
         self.assertIs(type(change), dict)
-        self.assertItemsEqual(change.keys(), ['step', 'from', 'to'])
+        self.assertItemsEqual(change.keys(), ['step', 'from', 'to', 'tag'])
         self.assertIs(type(change['step']), int)
         ifrom = change['from']
         ito = change['to']
