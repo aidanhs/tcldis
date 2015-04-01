@@ -2,7 +2,7 @@ tcldis
 ======
 
 This is a Python module to decompile Tcl bytecode, targeting Tcl 8.5 and
-Python 2.6 - 2.7.
+Python 2.6 - 2.7. Tcl 8.6 *may* work, but may also crash on assertions.
 
 It is best used with reference to tclCompile.{c,h} from the Tcl source.
 
@@ -37,8 +37,8 @@ Reference:
    - `returns: a list of steps and changes from the decompilation process`
    - `side effects: none`
 
-UNIX BUILD
-----------
+UNIX BUILD AND BASIC USAGE
+--------------------------
 
 It is assumed that you
  - have got the repo (either by `git clone` or a tar.gz from the releases page).
@@ -88,8 +88,8 @@ Now try it out:
 	['x', '1']
 
 
-TESTS AND ACTUAL DECOMPILATION
-------------------------------
+TESTS, ACTUAL DECOMPILATION AND THE WEB INTERFACE
+-------------------------------------------------
 
 The tests are a little more complex to set up as they require a build of
 libtclpy with stubs disabled (tcldis itself cannot use stubs - it uses some Tcl
@@ -125,3 +125,14 @@ Now you can actually play with decompiling:
             return 15
     }
 
+Or run the web interface:
+
+    $ curl https://raw.githubusercontent.com/bottlepy/bottle/0.12.8/bottle.py > web/bottle.py
+    $ PYTHONPATH=.:opt/libtclpy python web/srv.py
+    WARNING: falling back to single threaded mode
+    Bottle v0.12.8 server starting up (using WSGIRefServer())...
+    Listening on http://127.0.0.1:8000/
+    Hit Ctrl-C to quit.
+
+Note that the web interface is *NOT SECURE* and can easily be used to exploit your
+computer if you expose it to the outside world.

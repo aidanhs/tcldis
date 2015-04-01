@@ -30,7 +30,7 @@ def decompile_steps():
 
 def start():
     # Start the server
-    host = '0.0.0.0'
+    host = '127.0.0.1'
     port = int(os.environ.get('TCLDIS_PORT', 8000))
     bottle.debug(True)
     try:
