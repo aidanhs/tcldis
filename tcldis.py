@@ -922,13 +922,16 @@ def _bblock_flow(bblocks):
 def _bblock_join(bblocks):
 
     # Remove empty unused blocks
+    # TODO: unknown if this is needed
     for i, bblock in enumerate(bblocks):
         if len(bblock.insts) > 0: continue
         targets = _get_targets(bblocks)
         if bblock.loc in targets: continue
         bblocks[i:i+1] = []
 
-        return True
+        previ = 0 if i == 0 else i-1
+        previlen = len(bblocks[previ].insts)
+        return [(((i, 0), (i, 0)), ((previ, previlen), (previ, previlen)))]
 
     # Join together blocks if possible
     for i in range(len(bblocks)):
@@ -950,10 +953,11 @@ def _bblock_join(bblocks):
             continue
         if _is_catch_end(bblock2):
             continue
+        changestart = ((i, 0), (i+1, len(bblocks[i+1].insts)))
         bblocks[i] = bblock1.appendinsts(list(bblock2.insts))
         bblocks[i+1:i+2] = []
-
-        return True
+        changeend = ((i, 0), (i, len(bblocks[i].insts)))
+        return [(changestart, changeend)]
 
     return False
 
@@ -995,8 +999,8 @@ def _decompile(bc):
             bblocks, changes = _bblocks_operation(_bblock_reduce, bc, bblocks)
             changed = bool(changes)
         if not changed:
-            changes = []
-            changed = _bblock_join(bblocks)
+            changes = _bblock_join(bblocks)
+            changed = bool(changes)
         if not changed:
             changes = _bblock_flow(bblocks)
             changed = bool(changes)
