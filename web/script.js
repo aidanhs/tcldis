@@ -86,7 +86,7 @@ var ActionArea = React.createClass({
                         It's probably worth repeating that - Emscripten allows you to put
                         together a Python and Tcl interpreter, a C extension to let them talk
                         to each other, the entire Python standard library and the TclDis code
-                        itself in under 12MB. I think that's pretty good.
+                        itself in under 12.5MB (3.5MB gzipped). I think that's pretty good.
                         <br />
                         If you want to play with this, run:
                         <br />
@@ -94,6 +94,8 @@ var ActionArea = React.createClass({
                         empython.eval('tclpy.eval("puts [list 1 2 3]")');</span>
                         <br />
                         in your JavaScript console.
+                        <br />
+                        The other half of the story is me not building a loading indicator.
                         <p />
                         <u>There's a bug! Will you fix it?</u>
                         <br />
