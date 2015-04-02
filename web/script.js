@@ -217,7 +217,7 @@ var StepPadding = React.createClass({
 
         var stepIdx = this.props.stepIdx;
         var lines = [];
-        var changes = this.props.changes.map(function (c) {
+        this.props.changes.forEach(function (c) {
             if (c.step !== stepIdx) {
                 return;
             }
@@ -239,7 +239,7 @@ var DecompileStepCode = React.createClass({
     render: function () {
         var step = this.props.step;
         return (
-            <pre>{step.map(function (bb, bbi) {
+            <pre>{step.map(function (bb) {
                 return bb.join('\n');
             }).join('\n')}</pre>
         );
@@ -249,7 +249,6 @@ var DecompileStepCode = React.createClass({
 var DecompileSteps = React.createClass({
     handleKeyDown: function (e) {
         var key = e.keyCode || e.charCode;
-        var stepIdx = this.state.stepIdx;
         if (key === larrow) { this.changeStepIdx(-1); }
         else if (key === rarrow) { this.changeStepIdx(1); }
         else if (key === uarrow) { this.showMiniSteps(true); }
@@ -332,7 +331,7 @@ var DecompileSteps = React.createClass({
             if (stepElts[0].key !== 'step'+(stepIdx-1)) {
                 span = (<span className='commentary'>
                     On the left is the code to decompile.
-                    <p />
+                    <br />
                     However, first it must be compiled.
                     Immediately on the right is the result of passing the code to the Tcl
                     bytecode (BC) compiler as a proc body. Lines like
