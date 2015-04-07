@@ -90,12 +90,10 @@ var ActionArea = React.createClass({
                         <br />
                         If you want to play with this, run:
                         <br />
-                        <span className='code'>empython.eval('import tclpy');<br />
-                        empython.eval('tclpy.eval("puts [list 1 2 3]")');</span>
+                        <span className='code'>empython.Run('import tclpy');<br />
+                        empython.Run('tclpy.eval("puts [list 1 2 3]")');</span>
                         <br />
                         in your JavaScript console.
-                        <br />
-                        The other half of the story is me not building a loading indicator.
                         <p />
                         <u>There's a bug! Will you fix it?</u>
                         <br />
