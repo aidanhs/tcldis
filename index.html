@@ -4,7 +4,7 @@
     <script src="tcldis/web/react-0.12.2.min.js"></script>
     <link  href="tcldis/web/style.css" rel="stylesheet" type="text/css">
     <script src="script.min.js"></script>
-    <script src="tcldis.js"></script>
+    <script async src="tcldis.js"></script>
 </head>
 <body>
 <div id="tcldis"></div>
@@ -28,18 +28,23 @@ puts 4
 'use strict';
 
 var decompile;
-setTimeout(function () {
+function init() {
     empython.Initialize();
     decompile = empython.Module.cwrap('emtcldis_decompile', 'string', ['string']);
-}, 0);
-setTimeout(function () {
     empython.Module.ccall('emtcldis_init', 'number', [], []);
-}, 0);
+}
 
 function getInitialCode(cb) {
-    setTimeout(function () {
+    var getCode = function () {
         cb(null, document.getElementById('initial_code').textContent);
-    }, 0);
+    };
+    if (window.empython === undefined) {
+        // Try again later
+        setTimeout(getInitialCode, 100, cb);
+    } else {
+        init();
+        setTimeout(getCode, 0);
+    }
 }
 
 function getDecompileSteps(code, cb) {
