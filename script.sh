@@ -1,5 +1,7 @@
 set -e
 
+[ -f "$(which emcc)" ] || (echo "emcc not found" && exit 1)
+
 TOP=$(pwd)
 echo "echo -I $TOP/empython-build/python/Include -I $TOP/empython-build/python" > $TOP/python-config
 chmod +x python-config
@@ -11,7 +13,7 @@ cd empython-build/python
     make -f ../Makefile em
     cd ../..
 
-git submodule init && git submodule update # tcldis
+git submodule update --init --recursive # tcldis
 git clone --recursive https://github.com/aidanhs/emtcl.git
 
 cd emtcl
@@ -26,11 +28,13 @@ cd emtcl
 cd tcldis
     sed -i 's/gcc/emcc/g' Makefile
     sed -i 's/TclDisassembleByteCodeObj/\0_/g' src/tcl_bcutil.c
+    sed -i 's/-O2/-Oz/g' Makefile
     PATH=$TOP:$PATH make TCLCONFIG=$TOP/tclConfig.sh _tcldis.o
     emar rc lib_tcldis.a _tcldis.o
     cd opt/libtclpy
         sed -i 's/gcc/emcc/g' Makefile
         sed -i '/dlopen/d' generic/tclpy.c
+        sed -i 's/-O2/-Oz/g' Makefile
         PATH=$TOP:$PATH make TCLCONFIG=$TOP/tclConfig.sh tclpy.o
         emar rc libtclpy.a tclpy.o
         cd ../..
@@ -46,6 +50,7 @@ cd empython
         echo '_tcldis -L../../tcldis -l_tcldis' >> Modules/Setup
         # import site is really slow (doubles initialisation time) and we don't need it
         sed -i 's/^int Py_NoSiteFlag;/int Py_NoSiteFlag = 1;/' Python/pythonrun.c
+        sed -i 's/^int Py_DontWriteBytecodeFlag;/int Py_DontWriteBytecodeFlag = 1;/' Python/pythonrun.c
         cat ../../emtcldis.c >> Python/pythonrun.c
         emmake make || true
         cp ../python.native python && chmod +x python
@@ -54,6 +59,7 @@ cd empython
     ln -s ../../../tcldis/tcldis.py python/Lib
     sed -i 's|libz\.a$|\0 ../tcldis/opt/libtclpy/libtclpy.a ../tcldis/lib_tcldis.a ../emtcl/emtcl.bc|' Makefile
     sed -i 's/EXPORTED_FUNCTIONS=[^]]*/\0, '"'"'_emtcldis_init'"'"', '"'"'_emtcldis_decompile'"'"'/' Makefile
+    sed -i 's/EXPORTED_FUNCTIONS=.*/\0 -s DEAD_FUNCTIONS="['"'"'_TclExecuteByteCode'"'"','"'"'_Tcl_NamespaceObjCmd'"'"']"/' Makefile
     make
     cp lp.js ../tcldis.js
     cd ..
