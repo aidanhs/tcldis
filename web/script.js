@@ -20,10 +20,10 @@ window.getDecompileSteps = window.getDecompileSteps || fillinFn;
 var ActionArea = React.createClass({
     getInitialState: function () {
         window.getInitialCode(function (err, data) {
-            this.setState({'code': data});
+            this.setState({'code': data, 'gotInitialCode': true});
             setTimeout(this.onDecompileClick, 0);
         }.bind(this));
-        return {'code': ''};
+        return {'code': '', 'gotInitialCode': false};
     },
     handleChange: function (e) {
         this.setState({'code': e.target.value});
@@ -120,7 +120,9 @@ var ActionArea = React.createClass({
                     </div>
                     <div style={{'textAlign': 'center'}}>(you can also use the arrow keys)</div>
                     <button id='helpbutton' onClick={this.onHelpButtonToggle}>Tell me more about TclDis!</button>
-                    <button id='decompilebutton' onClick={this.onDecompileClick}>Decompile!</button>
+                    <button id='decompilebutton' disabled={!this.state.gotInitialCode} onClick={this.onDecompileClick}>
+                        {this.state.gotInitialCode ? 'Decompile!' : 'Please wait for initialisation...'}
+                    </button>
                 </div>
                 <div>
                     <textarea onChange={this.handleChange} value={this.state.code} />
