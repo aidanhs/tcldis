@@ -102,7 +102,8 @@ var ActionArea = React.createClass({
                         <p />
                         <u>Can I decompile .tbc files?</u>
                         <br />
-                        In theory, but no support will be offered.
+                        Yes, and the author has done so, but no unpaid support will be offered.
+                        Get in touch if you want to discuss other options.
                     </span>
                 </div></div>
             );
