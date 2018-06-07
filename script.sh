@@ -14,6 +14,9 @@ cd empython-build/python
     cd ../..
 
 git clone --recursive https://github.com/aidanhs/tcldis.git
+cp tcldis/web/react-0.12.2.min.js .
+cp tcldis/web/style.css .
+
 git clone --recursive https://github.com/aidanhs/emtcl.git
 
 cd emtcl
