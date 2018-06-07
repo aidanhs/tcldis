@@ -13,7 +13,7 @@ cd empython-build/python
     make -f ../Makefile em
     cd ../..
 
-git submodule update --init --recursive # tcldis
+git clone --recursive https://github.com/aidanhs/tcldis.git
 git clone --recursive https://github.com/aidanhs/emtcl.git
 
 cd emtcl
